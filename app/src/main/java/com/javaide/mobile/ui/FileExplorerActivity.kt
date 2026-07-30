@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.javaide.mobile.R
 import com.javaide.mobile.compiler.AndroidJarProvider
+import com.javaide.mobile.compiler.Dexer
 import com.javaide.mobile.compiler.JavaCompiler
 import com.javaide.mobile.databinding.ActivityFileExplorerBinding
 import kotlinx.coroutines.Dispatchers
@@ -81,17 +82,34 @@ class FileExplorerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val androidJar = AndroidJarProvider.get(this@FileExplorerActivity)
             val projectDir = File(projectPath)
-            val outputDir = File(projectDir, "build/classes")
+            val classesDir = File(projectDir, "build/classes")
+            val dexDir = File(projectDir, "build/dex")
 
-            val result = withContext(Dispatchers.IO) {
-                JavaCompiler.compile(projectDir, outputDir, androidJar)
+            val (success, log) = withContext(Dispatchers.IO) {
+                val compileResult = JavaCompiler.compile(projectDir, classesDir, androidJar)
+                if (!compileResult.success) {
+                    return@withContext compileResult.success to compileResult.log
+                }
+
+                val dexResult = Dexer.dex(classesDir, dexDir, androidJar)
+                val combinedLog = buildString {
+                    append(compileResult.log)
+                    appendLine()
+                    appendLine("--- dex ---")
+                    append(dexResult.log)
+                    if (dexResult.success) {
+                        appendLine()
+                        append("classes.dex written to ${File(dexDir, "classes.dex").absolutePath}")
+                    }
+                }
+                dexResult.success to combinedLog
             }
 
             progressDialog.dismiss()
 
             val intent = Intent(this@FileExplorerActivity, BuildOutputActivity::class.java)
-            intent.putExtra(BuildOutputActivity.EXTRA_SUCCESS, result.success)
-            intent.putExtra(BuildOutputActivity.EXTRA_LOG, result.log)
+            intent.putExtra(BuildOutputActivity.EXTRA_SUCCESS, success)
+            intent.putExtra(BuildOutputActivity.EXTRA_LOG, log)
             startActivity(intent)
         }
     }
