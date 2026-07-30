@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.sora.editor)
     implementation(libs.sora.language.java)
     implementation(libs.ecj)
+    implementation(libs.r8)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
