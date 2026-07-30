@@ -3,6 +3,11 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+// ECJ needs android.jar on its compile classpath to compile Android source on-device.
+// Rather than committing a ~26MB binary to the repo, copy the same android.jar this
+// module is already compiled against (android.bootClasspath) into assets at build time.
+val androidJarAssetDir = layout.buildDirectory.dir("generated/androidJarAsset")
+
 android {
     namespace = "com.javaide.mobile"
     compileSdk = 34
@@ -34,6 +39,28 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    packaging {
+        resources {
+            excludes += setOf("META-INF/LICENSE*", "META-INF/NOTICE*", "module-info.class")
+        }
+    }
+
+    sourceSets {
+        getByName("main") {
+            assets.srcDir(androidJarAssetDir)
+        }
+    }
+}
+
+val copyAndroidJar by tasks.registering(Copy::class) {
+    from(provider { android.bootClasspath.first() })
+    into(androidJarAssetDir)
+    rename { "android.jar" }
+}
+
+tasks.matching { it.name.matches(Regex("merge.*Assets")) }.configureEach {
+    dependsOn(copyAndroidJar)
 }
 
 dependencies {
@@ -47,6 +74,7 @@ dependencies {
 
     implementation(libs.sora.editor)
     implementation(libs.sora.language.java)
+    implementation(libs.ecj)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)

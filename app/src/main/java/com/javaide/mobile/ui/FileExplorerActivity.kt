@@ -1,11 +1,21 @@
 package com.javaide.mobile.ui
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.javaide.mobile.R
+import com.javaide.mobile.compiler.AndroidJarProvider
+import com.javaide.mobile.compiler.JavaCompiler
 import com.javaide.mobile.databinding.ActivityFileExplorerBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /** Browses the contents of a single project directory, one folder level at a time. */
@@ -46,6 +56,44 @@ class FileExplorerActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         onBackPressedDispatcher.onBackPressed()
         return true
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_file_explorer, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_build) {
+            runBuild()
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun runBuild() {
+        val progressDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.building)
+            .setMessage(R.string.building_message)
+            .setCancelable(false)
+            .show()
+
+        lifecycleScope.launch {
+            val androidJar = AndroidJarProvider.get(this@FileExplorerActivity)
+            val projectDir = File(projectPath)
+            val outputDir = File(projectDir, "build/classes")
+
+            val result = withContext(Dispatchers.IO) {
+                JavaCompiler.compile(projectDir, outputDir, androidJar)
+            }
+
+            progressDialog.dismiss()
+
+            val intent = Intent(this@FileExplorerActivity, BuildOutputActivity::class.java)
+            intent.putExtra(BuildOutputActivity.EXTRA_SUCCESS, result.success)
+            intent.putExtra(BuildOutputActivity.EXTRA_LOG, result.log)
+            startActivity(intent)
+        }
     }
 
     private fun loadEntries() {

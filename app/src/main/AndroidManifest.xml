@@ -31,6 +31,11 @@
             android:label="@string/title_editor"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".ui.BuildOutputActivity"
+            android:exported="false"
+            android:label="@string/title_build_output" />
+
     </application>
 
 </manifest>
