@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Java IDE</string>
+    <string name="title_file_explorer">Files</string>
+    <string name="title_editor">Editor</string>
+
+    <string name="action_new_project">New project</string>
+    <string name="hint_project_name">Project name</string>
+    <string name="empty_projects_message">No projects yet. Tap + to create one.</string>
+    <string name="empty_files_message">This folder is empty.</string>
+
+    <string name="dialog_new_project_title">New project</string>
+    <string name="dialog_create">Create</string>
+    <string name="dialog_cancel">Cancel</string>
+
+    <string name="error_project_name_required">Enter a project name</string>
+    <string name="error_project_exists">A project with this name already exists</string>
+    <string name="error_project_create_failed">Failed to create project</string>
+
+    <string name="action_save">Save</string>
+    <string name="file_saved">Saved</string>
+    <string name="file_save_failed">Failed to save file</string>
+</resources>

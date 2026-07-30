@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ide_primary">#1976D2</color>
+    <color name="ide_primary_dark">#115293</color>
+    <color name="ide_accent">#FF9800</color>
+    <color name="ide_background">#FAFAFA</color>
+    <color name="ide_background_dark">#121212</color>
+    <color name="ic_launcher_background">#1976D2</color>
+</resources>
