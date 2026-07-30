@@ -13,6 +13,7 @@ import com.javaide.mobile.R
 import com.javaide.mobile.compiler.AndroidJarProvider
 import com.javaide.mobile.compiler.Dexer
 import com.javaide.mobile.compiler.JavaCompiler
+import com.javaide.mobile.compiler.JavaRunner
 import com.javaide.mobile.compiler.Packager
 import com.javaide.mobile.compiler.ResourceCompiler
 import com.javaide.mobile.databinding.ActivityFileExplorerBinding
@@ -67,11 +68,64 @@ class FileExplorerActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_build) {
-            runBuild()
-            return true
+        when (item.itemId) {
+            R.id.action_build -> {
+                runBuild()
+                return true
+            }
+            R.id.action_run -> {
+                runProject()
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun runProject() {
+        val progressDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.running)
+            .setMessage(R.string.running_message)
+            .setCancelable(false)
+            .show()
+
+        lifecycleScope.launch {
+            val androidJar = AndroidJarProvider.get(this@FileExplorerActivity)
+            val projectDir = File(projectPath)
+            val classesDir = File(projectDir, "build/classes")
+            val dexDir = File(projectDir, "build/dex")
+            val optimizedDexDir = File(projectDir, "build/dex-opt")
+
+            val (success, log) = withContext(Dispatchers.IO) {
+                val runLog = StringBuilder()
+
+                val compileResult = JavaCompiler.compile(projectDir, classesDir, androidJar)
+                runLog.appendLine("--- compile ---").appendLine(compileResult.log)
+                if (!compileResult.success) {
+                    return@withContext false to runLog.toString()
+                }
+
+                val dexResult = Dexer.dex(classesDir, dexDir, androidJar)
+                runLog.appendLine().appendLine("--- dex ---").appendLine(dexResult.log)
+                if (!dexResult.success) {
+                    return@withContext false to runLog.toString()
+                }
+
+                val runResult = JavaRunner.run(classesDir, File(dexDir, "classes.dex"), optimizedDexDir)
+                runLog.appendLine().appendLine("--- output ---").appendLine(runResult.output)
+
+                runResult.success to runLog.toString()
+            }
+
+            progressDialog.dismiss()
+
+            val intent = Intent(this@FileExplorerActivity, BuildOutputActivity::class.java)
+            intent.putExtra(BuildOutputActivity.EXTRA_SUCCESS, success)
+            intent.putExtra(BuildOutputActivity.EXTRA_LOG, log)
+            intent.putExtra(BuildOutputActivity.EXTRA_TITLE_RES, R.string.title_run_output)
+            intent.putExtra(BuildOutputActivity.EXTRA_SUCCESS_TEXT_RES, R.string.run_succeeded)
+            intent.putExtra(BuildOutputActivity.EXTRA_FAILURE_TEXT_RES, R.string.run_failed)
+            startActivity(intent)
+        }
     }
 
     private fun runBuild() {

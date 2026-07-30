@@ -2,13 +2,29 @@ package com.javaide.mobile.model
 
 import java.io.File
 
+enum class ProjectType {
+    /** A full Android app: manifest + activity + resources, buildable into an installable APK. */
+    ANDROID_APP,
+
+    /** A single Java class with public static void main, run in-process (no manifest/resources). */
+    JAVA_CONSOLE
+}
+
 /**
- * Scaffolds a minimal Android project (manifest + one activity + resources)
- * that later phases (compiler/dexer/packager) will build into an APK.
+ * Scaffolds either a minimal Android app (manifest + one activity + resources, buildable
+ * into an APK) or a plain Java class for quick practice (compiled + dexed + run in-process,
+ * no manifest/resources needed).
  */
 object ProjectTemplate {
 
-    fun create(projectDir: File, projectName: String, packageName: String) {
+    fun create(projectDir: File, projectName: String, packageName: String, type: ProjectType) {
+        when (type) {
+            ProjectType.ANDROID_APP -> createAndroidApp(projectDir, projectName, packageName)
+            ProjectType.JAVA_CONSOLE -> createConsoleProject(projectDir, packageName)
+        }
+    }
+
+    private fun createAndroidApp(projectDir: File, projectName: String, packageName: String) {
         val javaDir = File(projectDir, "src/main/java/${packageName.replace('.', '/')}")
         val resValuesDir = File(projectDir, "src/main/res/values")
         val resLayoutDir = File(projectDir, "src/main/res/layout")
@@ -19,6 +35,21 @@ object ProjectTemplate {
         File(resLayoutDir, "activity_main.xml").writeText(activityMainLayout())
         File(resValuesDir, "strings.xml").writeText(strings(projectName))
     }
+
+    private fun createConsoleProject(projectDir: File, packageName: String) {
+        val javaDir = File(projectDir, "src/main/java/${packageName.replace('.', '/')}").apply { mkdirs() }
+        File(javaDir, "Main.java").writeText(mainClass(packageName))
+    }
+
+    private fun mainClass(packageName: String) = """
+        |package $packageName;
+        |
+        |public class Main {
+        |    public static void main(String[] args) {
+        |        System.out.println("Hello, Java!");
+        |    }
+        |}
+        |""".trimMargin()
 
     private fun manifest(packageName: String) = """
         |<?xml version="1.0" encoding="utf-8"?>
