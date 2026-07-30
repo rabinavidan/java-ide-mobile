@@ -70,10 +70,48 @@ tasks.matching { it.name.matches(Regex("merge.*Assets")) }.configureEach {
     dependsOn(copyAndroidJar)
 }
 
+// --- Allure reporting for local unit tests ---
+// allure-junit4 (the AllureJunit4 RunListener) needs allure-junit4-aspect to actually get
+// registered: that module carries an AspectJ aspect (META-INF/aop.xml) that hooks
+// "new RunNotifier()" and calls notifier.addListener(new AllureJunit4()) right after
+// construction, regardless of which JUnit runner created it (Gradle's own, plain
+// JUnitCore, an IDE, ...). That, plus the aspectjweaver javaagent and a results
+// directory, is all that's needed - no custom test runner required. Verified standalone:
+// ran a throwaway JUnit4 test with this exact wiring and confirmed real result JSON
+// files (with correct pass/fail status and stack traces) were produced.
+// Scoped to local unit tests only; instrumented (on-device) Allure reporting would need
+// a custom AndroidJUnitRunner plus pulling results off the device, out of scope here.
+val aspectjWeaver: Configuration by configurations.creating
+val allureCli: Configuration by configurations.creating
+
+val allureResultsDir = layout.buildDirectory.dir("allure-results")
+val allureCliDir = layout.buildDirectory.dir("allure-cli")
+
 // Local unit tests can't use AndroidJarProvider (needs a Context), so hand them the same
-// android.jar this module is compiled against via a system property.
+// android.jar this module is compiled against via a system property. Also wires up Allure.
 tasks.withType<Test>().configureEach {
     systemProperty("android.jar.path", provider { android.bootClasspath.first().absolutePath }.get())
+    systemProperty("allure.results.directory", allureResultsDir.get().asFile.absolutePath)
+    jvmArgs("-javaagent:${aspectjWeaver.asPath}")
+}
+
+val extractAllureCli by tasks.registering(Copy::class) {
+    from(allureCli.map { zipTree(it) })
+    into(allureCliDir)
+    doLast {
+        file(allureCliDir.get().file("allure-${libs.versions.allure.get()}/bin/allure")).setExecutable(true)
+    }
+}
+
+val allureReport by tasks.registering(Exec::class) {
+    dependsOn(extractAllureCli, "testDebugUnitTest")
+    workingDir(allureCliDir)
+    commandLine(
+        "allure-${libs.versions.allure.get()}/bin/allure", "generate",
+        allureResultsDir.get().asFile.absolutePath,
+        "-o", layout.buildDirectory.dir("reports/allure-report").get().asFile.absolutePath,
+        "--clean"
+    )
 }
 
 dependencies {
@@ -93,6 +131,16 @@ dependencies {
     implementation(libs.apksig)
 
     testImplementation(libs.junit)
+    testImplementation(libs.allure.junit4)
+    testImplementation(libs.allure.junit4.aspect)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
+    aspectjWeaver(libs.aspectjweaver)
+    allureCli(libs.allure.commandline) {
+        isTransitive = false
+        artifact {
+            type = "zip"
+        }
+    }
 }
