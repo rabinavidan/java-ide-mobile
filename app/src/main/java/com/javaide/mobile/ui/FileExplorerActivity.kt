@@ -14,6 +14,7 @@ import com.javaide.mobile.compiler.AndroidJarProvider
 import com.javaide.mobile.compiler.Dexer
 import com.javaide.mobile.compiler.JavaCompiler
 import com.javaide.mobile.compiler.JavaRunner
+import com.javaide.mobile.compiler.ManifestUtils
 import com.javaide.mobile.compiler.Packager
 import com.javaide.mobile.compiler.ResourceCompiler
 import com.javaide.mobile.databinding.ActivityFileExplorerBinding
@@ -138,31 +139,32 @@ class FileExplorerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val androidJar = AndroidJarProvider.get(this@FileExplorerActivity)
             val projectDir = File(projectPath)
+            val manifestFile = File(projectDir, "src/main/AndroidManifest.xml")
             val generatedSourcesDir = File(projectDir, "build/generated/r")
             val classesDir = File(projectDir, "build/classes")
             val dexDir = File(projectDir, "build/dex")
             val unsignedApk = File(projectDir, "build/outputs/unsigned.apk")
             val signedApk = File(projectDir, "build/outputs/app-debug.apk")
 
-            val (success, log) = withContext(Dispatchers.IO) {
+            val (success, log, packageName) = withContext(Dispatchers.IO) {
                 val buildLog = StringBuilder()
 
                 val resourceResult = ResourceCompiler.compile(projectDir, androidJar, generatedSourcesDir)
                 buildLog.appendLine("--- resources ---").appendLine(resourceResult.log)
                 if (!resourceResult.success || resourceResult.apkModule == null) {
-                    return@withContext false to buildLog.toString()
+                    return@withContext Triple(false, buildLog.toString(), null as String?)
                 }
 
                 val compileResult = JavaCompiler.compile(projectDir, classesDir, androidJar, listOf(generatedSourcesDir))
                 buildLog.appendLine().appendLine("--- compile ---").appendLine(compileResult.log)
                 if (!compileResult.success) {
-                    return@withContext false to buildLog.toString()
+                    return@withContext Triple(false, buildLog.toString(), null as String?)
                 }
 
                 val dexResult = Dexer.dex(classesDir, dexDir, androidJar)
                 buildLog.appendLine().appendLine("--- dex ---").appendLine(dexResult.log)
                 if (!dexResult.success) {
-                    return@withContext false to buildLog.toString()
+                    return@withContext Triple(false, buildLog.toString(), null as String?)
                 }
 
                 val packageResult = Packager.packageApk(
@@ -173,7 +175,8 @@ class FileExplorerActivity : AppCompatActivity() {
                 )
                 buildLog.appendLine().appendLine("--- package ---").appendLine(packageResult.log)
 
-                packageResult.success to buildLog.toString()
+                val packageName = if (packageResult.success) ManifestUtils.readPackageName(manifestFile) else null
+                Triple(packageResult.success, buildLog.toString(), packageName)
             }
 
             progressDialog.dismiss()
@@ -181,6 +184,10 @@ class FileExplorerActivity : AppCompatActivity() {
             val intent = Intent(this@FileExplorerActivity, BuildOutputActivity::class.java)
             intent.putExtra(BuildOutputActivity.EXTRA_SUCCESS, success)
             intent.putExtra(BuildOutputActivity.EXTRA_LOG, log)
+            if (success && packageName != null) {
+                intent.putExtra(BuildOutputActivity.EXTRA_APK_PATH, signedApk.absolutePath)
+                intent.putExtra(BuildOutputActivity.EXTRA_PACKAGE_NAME, packageName)
+            }
             startActivity(intent)
         }
     }

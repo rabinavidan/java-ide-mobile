@@ -31,7 +31,7 @@ object ResourceCompiler {
         }
 
         return try {
-            val packageName = readManifestPackage(manifestFile)
+            val packageName = ManifestUtils.readPackageName(manifestFile)
             val stringsFile = File(mainDir, "res/values/strings.xml")
             val stringNames = readStringNames(stringsFile)
             val layoutFiles = File(mainDir, "res/layout").listFiles { f -> f.isFile && f.extension == "xml" }
@@ -71,11 +71,6 @@ object ResourceCompiler {
         } catch (e: Exception) {
             ResourceCompileResult(success = false, log = "Resource compilation failed: ${e.message}")
         }
-    }
-
-    private fun readManifestPackage(manifestFile: File): String {
-        val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(manifestFile)
-        return doc.documentElement.getAttribute("package")
     }
 
     private fun readStringNames(stringsFile: File): List<String> {

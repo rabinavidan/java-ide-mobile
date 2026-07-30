@@ -36,4 +36,9 @@
     <string name="title_run_output">Run output</string>
     <string name="run_succeeded">Run finished</string>
     <string name="run_failed">Run failed</string>
+
+    <string name="action_install">Install</string>
+    <string name="action_launch">Launch</string>
+    <string name="msg_allow_unknown_sources">Allow installing from this app, then tap Install again</string>
+    <string name="error_app_not_installed">App isn\'t installed yet</string>
 </resources>

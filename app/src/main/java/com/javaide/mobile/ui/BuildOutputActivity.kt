@@ -2,9 +2,12 @@ package com.javaide.mobile.ui
 
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.javaide.mobile.R
 import com.javaide.mobile.databinding.ActivityBuildOutputBinding
+import com.javaide.mobile.util.ApkInstaller
+import java.io.File
 
 class BuildOutputActivity : AppCompatActivity() {
 
@@ -14,6 +17,8 @@ class BuildOutputActivity : AppCompatActivity() {
         const val EXTRA_TITLE_RES = "extra_title_res"
         const val EXTRA_SUCCESS_TEXT_RES = "extra_success_text_res"
         const val EXTRA_FAILURE_TEXT_RES = "extra_failure_text_res"
+        const val EXTRA_APK_PATH = "extra_apk_path"
+        const val EXTRA_PACKAGE_NAME = "extra_package_name"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,6 +31,8 @@ class BuildOutputActivity : AppCompatActivity() {
 
         val success = intent.getBooleanExtra(EXTRA_SUCCESS, false)
         val log = intent.getStringExtra(EXTRA_LOG).orEmpty()
+        val apkPath = intent.getStringExtra(EXTRA_APK_PATH)
+        val packageName = intent.getStringExtra(EXTRA_PACKAGE_NAME)
 
         val successTextRes = intent.getIntExtra(EXTRA_SUCCESS_TEXT_RES, R.string.build_succeeded)
         val failureTextRes = intent.getIntExtra(EXTRA_FAILURE_TEXT_RES, R.string.build_failed)
@@ -34,6 +41,16 @@ class BuildOutputActivity : AppCompatActivity() {
             if (success) Color.parseColor("#2E7D32") else Color.parseColor("#C62828")
         )
         binding.textBuildLog.text = log
+
+        if (success && apkPath != null && packageName != null) {
+            binding.layoutActions.visibility = View.VISIBLE
+            binding.buttonInstall.setOnClickListener {
+                ApkInstaller.install(this, File(apkPath))
+            }
+            binding.buttonLaunch.setOnClickListener {
+                ApkInstaller.launch(this, packageName)
+            }
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {
