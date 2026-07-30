@@ -2,6 +2,7 @@ package com.javaide.mobile.util
 
 import android.content.Context
 import com.javaide.mobile.model.ProjectTemplate
+import com.javaide.mobile.model.ProjectType
 import java.io.File
 
 object ProjectStorage {
@@ -23,12 +24,12 @@ object ProjectStorage {
         File(projectsRoot(context), name).exists()
 
     /** Creates a new project directory scaffolded from [ProjectTemplate]. */
-    fun createProject(context: Context, name: String): File {
+    fun createProject(context: Context, name: String, type: ProjectType): File {
         val projectDir = File(projectsRoot(context), name)
         check(!projectDir.exists()) { "Project already exists: $name" }
         projectDir.mkdirs()
         val packageName = "com.example.${name.lowercase()}"
-        ProjectTemplate.create(projectDir, name, packageName)
+        ProjectTemplate.create(projectDir, name, packageName, type)
         return projectDir
     }
 }

@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.javaide.mobile.R
 import com.javaide.mobile.databinding.ActivityMainBinding
 import com.javaide.mobile.databinding.DialogNewProjectBinding
+import com.javaide.mobile.model.ProjectType
 import com.javaide.mobile.util.ProjectStorage
 import java.io.File
 
@@ -69,7 +70,12 @@ class MainActivity : AppCompatActivity() {
                         dialogBinding.editProjectName.error = getString(R.string.error_project_exists)
                     }
                     else -> {
-                        runCatching { ProjectStorage.createProject(this, name) }
+                        val type = if (dialogBinding.radioAndroidApp.isChecked) {
+                            ProjectType.ANDROID_APP
+                        } else {
+                            ProjectType.JAVA_CONSOLE
+                        }
+                        runCatching { ProjectStorage.createProject(this, name, type) }
                             .onSuccess {
                                 refreshProjects()
                                 dialog.dismiss()

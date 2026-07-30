@@ -12,6 +12,8 @@
     <string name="dialog_new_project_title">New project</string>
     <string name="dialog_create">Create</string>
     <string name="dialog_cancel">Cancel</string>
+    <string name="project_type_java_console">Java practice (plain class, run instantly)</string>
+    <string name="project_type_android_app">Android app (full APK)</string>
 
     <string name="error_project_name_required">Enter a project name</string>
     <string name="error_project_exists">A project with this name already exists</string>
@@ -27,4 +29,11 @@
     <string name="title_build_output">Build output</string>
     <string name="build_succeeded">Build succeeded</string>
     <string name="build_failed">Build failed</string>
+
+    <string name="action_run">Run</string>
+    <string name="running">Running</string>
+    <string name="running_message">Compiling and running…</string>
+    <string name="title_run_output">Run output</string>
+    <string name="run_succeeded">Run finished</string>
+    <string name="run_failed">Run failed</string>
 </resources>
