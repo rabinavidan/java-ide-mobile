@@ -25,6 +25,8 @@ object ProjectTemplate {
         |<manifest xmlns:android="http://schemas.android.com/apk/res/android"
         |    package="$packageName">
         |
+        |    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34" />
+        |
         |    <application
         |        android:allowBackup="true"
         |        android:label="@string/app_name">
