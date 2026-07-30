@@ -76,6 +76,8 @@ dependencies {
     implementation(libs.sora.language.java)
     implementation(libs.ecj)
     implementation(libs.r8)
+    implementation(libs.arscLib)
+    implementation(libs.apksig)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)

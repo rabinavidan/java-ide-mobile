@@ -10,9 +10,14 @@ data class CompileResult(val success: Boolean, val log: String)
 /** Compiles a project's Java sources to .class files on-device using ECJ. */
 object JavaCompiler {
 
-    fun compile(projectDir: File, outputDir: File, androidJar: File): CompileResult {
-        val sourceFiles = File(projectDir, "src/main/java").walkTopDown()
-            .filter { it.isFile && it.extension == "java" }
+    fun compile(
+        projectDir: File,
+        outputDir: File,
+        androidJar: File,
+        extraSourceDirs: List<File> = emptyList()
+    ): CompileResult {
+        val sourceFiles = (listOf(File(projectDir, "src/main/java")) + extraSourceDirs)
+            .flatMap { dir -> dir.walkTopDown().filter { it.isFile && it.extension == "java" } }
             .map { it.absolutePath }
             .toList()
 

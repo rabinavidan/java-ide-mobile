@@ -11,6 +11,8 @@ activity = "1.9.2"
 soraEditor = "0.23.6"
 ecj = "3.46.0"
 r8 = "9.1.31"
+arscLib = "1.4.0"
+apksig = "9.3.1"
 junit = "4.13.2"
 androidxTestExtJunit = "1.2.1"
 espressoCore = "3.6.1"
@@ -27,6 +29,8 @@ sora-editor = { group = "io.github.Rosemoe.sora-editor", name = "editor", versio
 sora-language-java = { group = "io.github.Rosemoe.sora-editor", name = "language-java", version.ref = "soraEditor" }
 ecj = { group = "org.eclipse.jdt", name = "ecj", version.ref = "ecj" }
 r8 = { group = "com.android.tools", name = "r8", version.ref = "r8" }
+arscLib = { group = "io.github.reandroid", name = "ARSCLib", version.ref = "arscLib" }
+apksig = { group = "com.android.tools.build", name = "apksig", version.ref = "apksig" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

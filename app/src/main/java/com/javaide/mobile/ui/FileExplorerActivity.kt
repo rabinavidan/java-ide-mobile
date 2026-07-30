@@ -13,6 +13,8 @@ import com.javaide.mobile.R
 import com.javaide.mobile.compiler.AndroidJarProvider
 import com.javaide.mobile.compiler.Dexer
 import com.javaide.mobile.compiler.JavaCompiler
+import com.javaide.mobile.compiler.Packager
+import com.javaide.mobile.compiler.ResourceCompiler
 import com.javaide.mobile.databinding.ActivityFileExplorerBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -82,27 +84,42 @@ class FileExplorerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val androidJar = AndroidJarProvider.get(this@FileExplorerActivity)
             val projectDir = File(projectPath)
+            val generatedSourcesDir = File(projectDir, "build/generated/r")
             val classesDir = File(projectDir, "build/classes")
             val dexDir = File(projectDir, "build/dex")
+            val unsignedApk = File(projectDir, "build/outputs/unsigned.apk")
+            val signedApk = File(projectDir, "build/outputs/app-debug.apk")
 
             val (success, log) = withContext(Dispatchers.IO) {
-                val compileResult = JavaCompiler.compile(projectDir, classesDir, androidJar)
+                val buildLog = StringBuilder()
+
+                val resourceResult = ResourceCompiler.compile(projectDir, androidJar, generatedSourcesDir)
+                buildLog.appendLine("--- resources ---").appendLine(resourceResult.log)
+                if (!resourceResult.success || resourceResult.apkModule == null) {
+                    return@withContext false to buildLog.toString()
+                }
+
+                val compileResult = JavaCompiler.compile(projectDir, classesDir, androidJar, listOf(generatedSourcesDir))
+                buildLog.appendLine().appendLine("--- compile ---").appendLine(compileResult.log)
                 if (!compileResult.success) {
-                    return@withContext compileResult.success to compileResult.log
+                    return@withContext false to buildLog.toString()
                 }
 
                 val dexResult = Dexer.dex(classesDir, dexDir, androidJar)
-                val combinedLog = buildString {
-                    append(compileResult.log)
-                    appendLine()
-                    appendLine("--- dex ---")
-                    append(dexResult.log)
-                    if (dexResult.success) {
-                        appendLine()
-                        append("classes.dex written to ${File(dexDir, "classes.dex").absolutePath}")
-                    }
+                buildLog.appendLine().appendLine("--- dex ---").appendLine(dexResult.log)
+                if (!dexResult.success) {
+                    return@withContext false to buildLog.toString()
                 }
-                dexResult.success to combinedLog
+
+                val packageResult = Packager.packageApk(
+                    resourceResult.apkModule,
+                    File(dexDir, "classes.dex"),
+                    unsignedApk,
+                    signedApk
+                )
+                buildLog.appendLine().appendLine("--- package ---").appendLine(packageResult.log)
+
+                packageResult.success to buildLog.toString()
             }
 
             progressDialog.dismiss()
