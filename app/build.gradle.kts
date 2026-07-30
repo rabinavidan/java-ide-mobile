@@ -50,6 +50,13 @@ android {
         getByName("main") {
             assets.srcDir(androidJarAssetDir)
         }
+        // Shared between local (JVM) and instrumented (on-device) tests, e.g. exercise fixtures.
+        getByName("test") {
+            java.srcDir("src/testShared/java")
+        }
+        getByName("androidTest") {
+            java.srcDir("src/testShared/java")
+        }
     }
 }
 
@@ -61,6 +68,12 @@ val copyAndroidJar by tasks.registering(Copy::class) {
 
 tasks.matching { it.name.matches(Regex("merge.*Assets")) }.configureEach {
     dependsOn(copyAndroidJar)
+}
+
+// Local unit tests can't use AndroidJarProvider (needs a Context), so hand them the same
+// android.jar this module is compiled against via a system property.
+tasks.withType<Test>().configureEach {
+    systemProperty("android.jar.path", provider { android.bootClasspath.first().absolutePath }.get())
 }
 
 dependencies {
