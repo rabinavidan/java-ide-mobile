@@ -5,4 +5,8 @@
         android:id="@+id/action_save"
         android:title="@string/action_save"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_find"
+        android:title="@string/action_find"
+        app:showAsAction="always" />
 </menu>
