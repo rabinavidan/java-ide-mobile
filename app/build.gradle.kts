@@ -135,6 +135,11 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
+    implementation(libs.jgit)
+    implementation(libs.jgit.gpg.bc)
+    implementation(libs.bouncycastle.pg)
+    implementation(libs.bouncycastle.prov)
+
     testImplementation(libs.junit)
     testImplementation(libs.allure.junit4)
     testImplementation(libs.allure.junit4.aspect)

@@ -79,6 +79,12 @@ class FileExplorerActivity : AppCompatActivity() {
                 runProject()
                 return true
             }
+            R.id.action_version_control -> {
+                val intent = Intent(this, VersionControlActivity::class.java)
+                intent.putExtra(VersionControlActivity.EXTRA_PROJECT_PATH, projectPath)
+                startActivity(intent)
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
     }

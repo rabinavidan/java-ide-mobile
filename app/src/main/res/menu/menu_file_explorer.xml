@@ -9,4 +9,8 @@
         android:id="@+id/action_build"
         android:title="@string/action_build"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_version_control"
+        android:title="@string/action_version_control"
+        app:showAsAction="never" />
 </menu>
