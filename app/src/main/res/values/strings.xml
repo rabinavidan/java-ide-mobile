@@ -104,4 +104,11 @@
     <string name="dialog_abort_merge_title">Abort merge?</string>
     <string name="dialog_abort_merge_message">This discards all conflict resolution progress and reverts to the state before the merge/pull started.</string>
     <string name="action_abort">Abort</string>
+
+    <string name="title_practice">Practice</string>
+    <string name="action_practice">Practice</string>
+    <string name="action_run_check">Run &amp; Check</string>
+    <string name="label_expected_output">Expected output</string>
+    <string name="practice_passed">Passed</string>
+    <string name="practice_failed">Failed</string>
 </resources>
