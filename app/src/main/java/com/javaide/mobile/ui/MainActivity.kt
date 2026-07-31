@@ -2,10 +2,13 @@ package com.javaide.mobile.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.javaide.mobile.R
+import com.javaide.mobile.data.Logger
 import com.javaide.mobile.databinding.ActivityMainBinding
 import com.javaide.mobile.databinding.DialogNewProjectBinding
 import com.javaide.mobile.model.ProjectType
@@ -35,6 +38,19 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshProjects()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_history) {
+            startActivity(Intent(this, HistoryActivity::class.java))
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     private fun refreshProjects() {
@@ -77,10 +93,12 @@ class MainActivity : AppCompatActivity() {
                         }
                         runCatching { ProjectStorage.createProject(this, name, type) }
                             .onSuccess {
+                                Logger.info(this, "project", "Created project '$name' ($type)")
                                 refreshProjects()
                                 dialog.dismiss()
                             }
                             .onFailure {
+                                Logger.error(this, "project", "Failed to create project '$name': ${it.message}")
                                 dialogBinding.editProjectName.error = getString(R.string.error_project_create_failed)
                             }
                     }

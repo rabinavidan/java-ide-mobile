@@ -17,6 +17,7 @@ import com.javaide.mobile.compiler.JavaRunner
 import com.javaide.mobile.compiler.ManifestUtils
 import com.javaide.mobile.compiler.Packager
 import com.javaide.mobile.compiler.ResourceCompiler
+import com.javaide.mobile.data.Logger
 import com.javaide.mobile.databinding.ActivityFileExplorerBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -119,6 +120,13 @@ class FileExplorerActivity : AppCompatActivity() {
 
             progressDialog.dismiss()
 
+            val projectName = File(projectPath).name
+            if (success) {
+                Logger.info(this@FileExplorerActivity, "run", "Run succeeded for '$projectName'")
+            } else {
+                Logger.warn(this@FileExplorerActivity, "run", "Run failed for '$projectName'")
+            }
+
             val intent = Intent(this@FileExplorerActivity, BuildOutputActivity::class.java)
             intent.putExtra(BuildOutputActivity.EXTRA_SUCCESS, success)
             intent.putExtra(BuildOutputActivity.EXTRA_LOG, log)
@@ -180,6 +188,13 @@ class FileExplorerActivity : AppCompatActivity() {
             }
 
             progressDialog.dismiss()
+
+            val projectName = File(projectPath).name
+            if (success) {
+                Logger.info(this@FileExplorerActivity, "build", "Build succeeded for '$projectName'")
+            } else {
+                Logger.warn(this@FileExplorerActivity, "build", "Build failed for '$projectName'")
+            }
 
             val intent = Intent(this@FileExplorerActivity, BuildOutputActivity::class.java)
             intent.putExtra(BuildOutputActivity.EXTRA_SUCCESS, success)

@@ -9,6 +9,7 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.javaide.mobile.R
+import com.javaide.mobile.data.Logger
 import java.io.File
 
 /** Hands a built APK to the system's package installer, and launches an installed app by package name. */
@@ -34,6 +35,7 @@ object ApkInstaller {
         val installIntent = Intent(Intent.ACTION_VIEW)
             .setDataAndType(uri, "application/vnd.android.package-archive")
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        Logger.info(activity, "install", "Requested install of ${apkFile.name}")
         activity.startActivity(installIntent)
     }
 
@@ -41,9 +43,11 @@ object ApkInstaller {
     fun launch(context: Context, packageName: String) {
         val intent = context.packageManager.getLaunchIntentForPackage(packageName)
         if (intent == null) {
+            Logger.warn(context, "launch", "Launch requested but '$packageName' isn't installed")
             Toast.makeText(context, R.string.error_app_not_installed, Toast.LENGTH_LONG).show()
             return
         }
+        Logger.info(context, "launch", "Launched '$packageName'")
         context.startActivity(intent)
     }
 }
