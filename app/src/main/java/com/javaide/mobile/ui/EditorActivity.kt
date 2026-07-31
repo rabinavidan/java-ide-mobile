@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.javaide.mobile.R
 import com.javaide.mobile.compiler.AndroidJarProvider
+import com.javaide.mobile.compiler.JavaCompiler
 import com.javaide.mobile.completion.SemanticJavaLanguage
 import com.javaide.mobile.data.AppDatabase
 import com.javaide.mobile.data.EditorState
@@ -25,6 +26,7 @@ class EditorActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_FILE_PATH = "extra_file_path"
+        const val EXTRA_PROJECT_PATH = "extra_project_path"
         private const val AUTO_SAVE_DEBOUNCE_MS = 1500L
     }
 
@@ -42,20 +44,42 @@ class EditorActivity : AppCompatActivity() {
         val path = intent.getStringExtra(EXTRA_FILE_PATH) ?: error("Missing $EXTRA_FILE_PATH")
         file = File(path)
         title = file.name
+        val projectPath = intent.getStringExtra(EXTRA_PROJECT_PATH)
 
         if (file.extension == "java") {
             binding.codeEditor.setEditorLanguage(JavaLanguage())
             lifecycleScope.launch {
                 val androidJar = withContext(Dispatchers.IO) { AndroidJarProvider.get(this@EditorActivity) }
-                binding.codeEditor.setEditorLanguage(
-                    SemanticJavaLanguage(androidJar).apply { fileName = file.name }
-                )
+                val language = SemanticJavaLanguage(androidJar).apply { fileName = file.name }
+                binding.codeEditor.setEditorLanguage(language)
+
+                if (projectPath != null) {
+                    seedProjectClassesForCompletion(File(projectPath), androidJar, language)
+                }
             }
         }
         binding.codeEditor.setText(file.readText())
         restoreCursorPosition()
 
         binding.codeEditor.subscribeEvent(ContentChangeEvent::class.java) { _, _ -> scheduleAutoSave() }
+    }
+
+    /**
+     * Cross-file symbols (types/methods in other .java files of the project) only resolve once
+     * they've been compiled to .class somewhere -- so compile the whole project once in the
+     * background when the editor opens, seeding completion even before an explicit Build/Run.
+     * This reflects the project as of the last successful compile, not live edits in other files.
+     */
+    private suspend fun seedProjectClassesForCompletion(projectDir: File, androidJar: File, language: SemanticJavaLanguage) {
+        val classesDir = File(projectDir, "build/classes")
+        // If a previous Build already generated R.java (Android app projects), include it so
+        // code referencing R.id./R.layout./etc. can compile here too, same as the Build pipeline.
+        val generatedSourcesDir = File(projectDir, "build/generated/r")
+        val extraSourceDirs = if (generatedSourcesDir.isDirectory) listOf(generatedSourcesDir) else emptyList()
+        withContext(Dispatchers.IO) {
+            runCatching { JavaCompiler.compile(projectDir, classesDir, androidJar, extraSourceDirs) }
+        }
+        language.projectClassesDir = classesDir
     }
 
     override fun onPause() {

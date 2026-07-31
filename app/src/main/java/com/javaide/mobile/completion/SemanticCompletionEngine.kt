@@ -26,12 +26,14 @@ data class SemanticSuggestion(val name: String, val kind: SemanticKind, val deta
 data class SemanticCompletionResult(val prefixLength: Int, val suggestions: List<SemanticSuggestion>)
 
 /**
- * Resolves the file currently being edited with ECJ (against android.jar plus the file's own
- * declarations) to offer real dot-member and in-scope completions, instead of sora-editor's
- * default plain-text word matching.
+ * Resolves the file currently being edited with ECJ (against android.jar, the file's own
+ * declarations, and optionally the rest of the project's already-compiled classes) to offer real
+ * dot-member and in-scope completions, instead of sora-editor's default plain-text word matching.
  *
- * Only the single file being edited is resolved -- types/methods declared in other files of the
- * same project are not visible to this. A dangling prefix (e.g. "list.a" or "it" while typing)
+ * Cross-file symbols (types/methods declared in *other* .java files of the same project) resolve
+ * only if [projectClassesDir] is given and contains their compiled .class files -- i.e. as of the
+ * last time the project was compiled (seeded on editor open, refreshed by Build/Run), not live
+ * across unsaved edits in other files. A dangling prefix (e.g. "list.a" or "it" while typing)
  * isn't valid Java on its own, so the prefix is swapped for a placeholder token that *is* valid
  * (a no-arg method call for dot-completion, a bare identifier for scope completion) before
  * asking ECJ to resolve it; the resulting bindings are then discarded and only used to look up
@@ -42,7 +44,13 @@ object SemanticCompletionEngine {
     private const val PLACEHOLDER = "zzzCompletionPlaceholderZzz"
     private val PLACEHOLDER_CHARS = PLACEHOLDER.toCharArray()
 
-    fun complete(androidJar: File, fullText: String, cursor: Int, fileName: String): SemanticCompletionResult {
+    fun complete(
+        androidJar: File,
+        fullText: String,
+        cursor: Int,
+        fileName: String,
+        projectClassesDir: File? = null
+    ): SemanticCompletionResult {
         var prefixStart = cursor
         while (prefixStart > 0 && Character.isJavaIdentifierPart(fullText[prefixStart - 1])) {
             prefixStart--
@@ -55,7 +63,11 @@ object SemanticCompletionEngine {
             PLACEHOLDER + (if (dotMode) "()" else "") +
             fullText.substring(cursor)
 
-        val nameEnv = FileSystem(arrayOf(androidJar.absolutePath), arrayOf(), "UTF-8")
+        val classpath = listOfNotNull(
+            androidJar.absolutePath,
+            projectClassesDir?.takeIf { it.isDirectory }?.absolutePath
+        ).toTypedArray()
+        val nameEnv = FileSystem(classpath, arrayOf(), "UTF-8")
         val options = CompilerOptions()
         options.complianceLevel = ClassFileConstants.JDK1_8
         options.sourceLevel = ClassFileConstants.JDK1_8
