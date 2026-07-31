@@ -5,9 +5,15 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.javaide.mobile.R
+import com.javaide.mobile.compiler.AndroidJarProvider
+import com.javaide.mobile.completion.SemanticJavaLanguage
 import com.javaide.mobile.databinding.ActivityEditorBinding
 import io.github.rosemoe.sora.langs.java.JavaLanguage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class EditorActivity : AppCompatActivity() {
@@ -32,6 +38,12 @@ class EditorActivity : AppCompatActivity() {
 
         if (file.extension == "java") {
             binding.codeEditor.setEditorLanguage(JavaLanguage())
+            lifecycleScope.launch {
+                val androidJar = withContext(Dispatchers.IO) { AndroidJarProvider.get(this@EditorActivity) }
+                binding.codeEditor.setEditorLanguage(
+                    SemanticJavaLanguage(androidJar).apply { fileName = file.name }
+                )
+            }
         }
         binding.codeEditor.setText(file.readText())
     }
