@@ -111,4 +111,79 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/ide_background"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/buttonUndo"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:contentDescription="@string/action_undo"
+            android:text="@string/glyph_undo" />
+
+        <Button
+            android:id="@+id/buttonRedo"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:contentDescription="@string/action_redo"
+            android:text="@string/glyph_redo" />
+
+        <HorizontalScrollView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:scrollbars="none">
+
+            <io.github.rosemoe.sora.widget.SymbolInputView
+                android:id="@+id/symbolInputView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </HorizontalScrollView>
+
+        <Button
+            android:id="@+id/buttonMoveLeft"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:contentDescription="@string/action_move_left"
+            android:text="@string/glyph_left" />
+
+        <Button
+            android:id="@+id/buttonMoveRight"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:contentDescription="@string/action_move_right"
+            android:text="@string/glyph_right" />
+
+        <Button
+            android:id="@+id/buttonMoveUp"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:contentDescription="@string/action_move_up"
+            android:text="@string/glyph_up" />
+
+        <Button
+            android:id="@+id/buttonMoveDown"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:contentDescription="@string/action_move_down"
+            android:text="@string/glyph_down" />
+
+    </LinearLayout>
+
 </LinearLayout>
