@@ -1,8 +1,11 @@
 package com.javaide.mobile.ui
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -16,10 +19,12 @@ import com.javaide.mobile.data.AppDatabase
 import com.javaide.mobile.data.EditorState
 import com.javaide.mobile.databinding.ActivityEditorBinding
 import io.github.rosemoe.sora.event.ContentChangeEvent
+import io.github.rosemoe.sora.event.PublishSearchResultEvent
 import io.github.rosemoe.sora.lang.diagnostic.DiagnosticDetail
 import io.github.rosemoe.sora.lang.diagnostic.DiagnosticRegion
 import io.github.rosemoe.sora.lang.diagnostic.DiagnosticsContainer
 import io.github.rosemoe.sora.langs.java.JavaLanguage
+import io.github.rosemoe.sora.widget.EditorSearcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -75,6 +80,67 @@ class EditorActivity : AppCompatActivity() {
         binding.codeEditor.subscribeEvent(ContentChangeEvent::class.java) { _, _ ->
             scheduleAutoSave()
             scheduleDiagnostics()
+        }
+        binding.codeEditor.subscribeEvent(PublishSearchResultEvent::class.java) { event, _ ->
+            updateMatchCountLabel(event.searcher)
+        }
+
+        setUpSearchBar()
+    }
+
+    private fun setUpSearchBar() {
+        binding.editSearchQuery.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = performSearch()
+            override fun afterTextChanged(s: Editable?) {}
+        })
+        binding.checkMatchCase.setOnCheckedChangeListener { _, _ -> performSearch() }
+        binding.buttonSearchNext.setOnClickListener { binding.codeEditor.searcher.gotoNext() }
+        binding.buttonSearchPrevious.setOnClickListener { binding.codeEditor.searcher.gotoPrevious() }
+        binding.buttonCloseSearch.setOnClickListener { toggleSearchBar(false) }
+        binding.buttonReplace.setOnClickListener {
+            binding.codeEditor.searcher.replaceCurrentMatch(binding.editReplaceWith.text?.toString().orEmpty())
+        }
+        binding.buttonReplaceAll.setOnClickListener {
+            binding.codeEditor.searcher.replaceAll(binding.editReplaceWith.text?.toString().orEmpty())
+        }
+    }
+
+    private fun toggleSearchBar(show: Boolean) {
+        binding.layoutSearchBar.visibility = if (show) View.VISIBLE else View.GONE
+        if (show) {
+            binding.editSearchQuery.requestFocus()
+        } else {
+            if (binding.codeEditor.searcher.hasQuery()) binding.codeEditor.searcher.stopSearch()
+            binding.editSearchQuery.text?.clear()
+            binding.editReplaceWith.text?.clear()
+            binding.textMatchCount.text = ""
+        }
+    }
+
+    private fun performSearch() {
+        val query = binding.editSearchQuery.text?.toString().orEmpty()
+        val searcher = binding.codeEditor.searcher
+        if (query.isEmpty()) {
+            if (searcher.hasQuery()) searcher.stopSearch()
+            binding.textMatchCount.text = ""
+            return
+        }
+        val caseInsensitive = !binding.checkMatchCase.isChecked
+        searcher.search(query, EditorSearcher.SearchOptions(caseInsensitive, false))
+    }
+
+    private fun updateMatchCountLabel(searcher: EditorSearcher) {
+        if (!searcher.hasQuery()) {
+            binding.textMatchCount.text = ""
+            return
+        }
+        val total = searcher.matchedPositionCount
+        binding.textMatchCount.text = if (total == 0) {
+            getString(R.string.msg_no_matches)
+        } else {
+            val current = searcher.currentMatchedPositionIndex
+            "${if (current >= 0) current + 1 else 0}/$total"
         }
     }
 
@@ -144,9 +210,15 @@ class EditorActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_save) {
-            saveFile()
-            return true
+        when (item.itemId) {
+            R.id.action_save -> {
+                saveFile()
+                return true
+            }
+            R.id.action_find -> {
+                toggleSearchBar(binding.layoutSearchBar.visibility != View.VISIBLE)
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
     }

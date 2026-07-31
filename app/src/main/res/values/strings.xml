@@ -72,4 +72,15 @@
     <string name="action_copy">Copy</string>
     <string name="msg_key_copied">Public key copied to clipboard</string>
     <string name="title_diff">Diff</string>
+
+    <string name="action_find">Find</string>
+    <string name="action_find_next">Next match</string>
+    <string name="action_find_previous">Previous match</string>
+    <string name="action_close_find">Close find</string>
+    <string name="action_replace">Replace</string>
+    <string name="action_replace_all">Replace all</string>
+    <string name="action_match_case">Match case</string>
+    <string name="hint_find">Find</string>
+    <string name="hint_replace">Replace with</string>
+    <string name="msg_no_matches">No matches</string>
 </resources>
