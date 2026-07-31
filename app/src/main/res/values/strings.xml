@@ -44,4 +44,32 @@
 
     <string name="title_history">History</string>
     <string name="empty_history_message">No activity recorded yet.</string>
+
+    <string name="title_version_control">Version Control</string>
+    <string name="action_version_control">Version Control</string>
+    <string name="label_branch">Branch: %1$s</string>
+    <string name="label_changes">Changes</string>
+    <string name="label_recent_commits">Recent commits</string>
+    <string name="status_clean">Nothing to commit, working tree clean.</string>
+    <string name="action_switch_branch">Switch / create branch</string>
+    <string name="action_view_diff">View diff</string>
+    <string name="action_sign_commit">Sign commit (GPG)</string>
+    <string name="action_commit">Commit</string>
+    <string name="action_view_signing_key">View signing key</string>
+    <string name="action_push">Push</string>
+    <string name="action_pull">Pull</string>
+    <string name="hint_commit_message">Commit message</string>
+    <string name="error_commit_message_required">Enter a commit message</string>
+    <string name="dialog_init_repo_title">No git repository yet</string>
+    <string name="dialog_init_repo_message">This project isn\'t a git repository yet. Initialize one?</string>
+    <string name="action_initialize">Initialize</string>
+    <string name="dialog_branch_title">Branch name</string>
+    <string name="dialog_credentials_title">Remote credentials</string>
+    <string name="hint_remote_url">Remote URL (e.g. https://github.com/user/repo.git)</string>
+    <string name="hint_username">Username</string>
+    <string name="hint_token">Personal access token</string>
+    <string name="dialog_signing_key_title">Signing public key</string>
+    <string name="action_copy">Copy</string>
+    <string name="msg_key_copied">Public key copied to clipboard</string>
+    <string name="title_diff">Diff</string>
 </resources>
