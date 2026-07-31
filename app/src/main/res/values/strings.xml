@@ -83,4 +83,17 @@
     <string name="hint_find">Find</string>
     <string name="hint_replace">Replace with</string>
     <string name="msg_no_matches">No matches</string>
+
+    <string name="action_undo">Undo</string>
+    <string name="action_redo">Redo</string>
+    <string name="action_move_left">Move cursor left</string>
+    <string name="action_move_right">Move cursor right</string>
+    <string name="action_move_up">Move cursor up</string>
+    <string name="action_move_down">Move cursor down</string>
+    <string name="glyph_undo">↩</string>
+    <string name="glyph_redo">↪</string>
+    <string name="glyph_left">←</string>
+    <string name="glyph_right">→</string>
+    <string name="glyph_up">↑</string>
+    <string name="glyph_down">↓</string>
 </resources>

@@ -25,6 +25,7 @@ import io.github.rosemoe.sora.lang.diagnostic.DiagnosticRegion
 import io.github.rosemoe.sora.lang.diagnostic.DiagnosticsContainer
 import io.github.rosemoe.sora.langs.java.JavaLanguage
 import io.github.rosemoe.sora.widget.EditorSearcher
+import io.github.rosemoe.sora.widget.SelectionMovement
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -86,6 +87,23 @@ class EditorActivity : AppCompatActivity() {
         }
 
         setUpSearchBar()
+        setUpAccessoryBar()
+    }
+
+    /** Quick-insert bar for characters/actions that are awkward to reach on a soft keyboard. */
+    private fun setUpAccessoryBar() {
+        binding.symbolInputView.bindEditor(binding.codeEditor)
+        binding.symbolInputView.addSymbols(
+            arrayOf("Tab", "{", "}", "(", ")", ";", "\"", "'", "<", ">", "=", ".", ",", "_"),
+            arrayOf("\t", "{", "}", "(", ")", ";", "\"", "'", "<", ">", "=", ".", ",", "_")
+        )
+
+        binding.buttonUndo.setOnClickListener { if (binding.codeEditor.canUndo()) binding.codeEditor.undo() }
+        binding.buttonRedo.setOnClickListener { if (binding.codeEditor.canRedo()) binding.codeEditor.redo() }
+        binding.buttonMoveLeft.setOnClickListener { binding.codeEditor.moveSelection(SelectionMovement.LEFT) }
+        binding.buttonMoveRight.setOnClickListener { binding.codeEditor.moveSelection(SelectionMovement.RIGHT) }
+        binding.buttonMoveUp.setOnClickListener { binding.codeEditor.moveSelection(SelectionMovement.UP) }
+        binding.buttonMoveDown.setOnClickListener { binding.codeEditor.moveSelection(SelectionMovement.DOWN) }
     }
 
     private fun setUpSearchBar() {
