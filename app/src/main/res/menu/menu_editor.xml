@@ -9,4 +9,8 @@
         android:id="@+id/action_find"
         android:title="@string/action_find"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_fix_imports"
+        android:title="@string/action_fix_imports"
+        app:showAsAction="never" />
 </menu>

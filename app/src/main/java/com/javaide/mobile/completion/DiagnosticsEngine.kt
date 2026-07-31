@@ -1,6 +1,7 @@
 package com.javaide.mobile.completion
 
 import org.eclipse.jdt.core.compiler.CategorizedProblem
+import org.eclipse.jdt.core.compiler.IProblem
 import org.eclipse.jdt.internal.compiler.Compiler
 import org.eclipse.jdt.internal.compiler.DefaultErrorHandlingPolicies
 import org.eclipse.jdt.internal.compiler.ICompilerRequestor
@@ -14,8 +15,18 @@ import java.io.File
 
 enum class DiagnosticSeverity { WARNING, ERROR }
 
-/** [start]/[end] are char offsets into the source text; [end] is exclusive. */
-data class DiagnosticIssue(val start: Int, val end: Int, val severity: DiagnosticSeverity, val message: String)
+/**
+ * [start]/[end] are char offsets into the source text; [end] is exclusive.
+ * [unresolvedTypeName] is set when this is ECJ's "X cannot be resolved to a type" problem
+ * (IProblem.UndefinedType) -- the simple name X, for the Fix Imports quick fix to look up.
+ */
+data class DiagnosticIssue(
+    val start: Int,
+    val end: Int,
+    val severity: DiagnosticSeverity,
+    val message: String,
+    val unresolvedTypeName: String? = null
+)
 
 /**
  * Resolves the file currently being edited with ECJ -- the real, unmodified text this time (no
@@ -60,7 +71,14 @@ object DiagnosticsEngine {
                         start = problem.sourceStart,
                         end = (problem.sourceEnd + 1).coerceAtMost(fullText.length),
                         severity = if (problem.isError) DiagnosticSeverity.ERROR else DiagnosticSeverity.WARNING,
-                        message = problem.message
+                        message = problem.message,
+                        // getID(): Kotlin's synthetic-property naming for all-caps getters like
+                        // getID() is unreliable, so call it explicitly rather than via `.id`.
+                        unresolvedTypeName = if (problem.getID() == IProblem.UndefinedType) {
+                            problem.arguments?.firstOrNull()
+                        } else {
+                            null
+                        }
                     )
                 }
         } catch (e: Exception) {
