@@ -2,6 +2,8 @@ package com.javaide.mobile.vcs
 
 import android.content.Context
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.api.MergeResult
+import org.eclipse.jgit.api.ResetCommand
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -129,13 +131,41 @@ object GitRepository {
         }
     }.toResult("Pushed")
 
+    /**
+     * JGit doesn't throw on a conflicting merge -- pull() returns normally with a PullResult
+     * whose merge status is CONFLICTING, leaving real git conflict markers in the working tree.
+     * So unlike the other operations here, success/failure has to be read from the result content,
+     * not just "did an exception happen".
+     */
     fun pull(projectDir: File, credentials: GitCredentials?): GitOperationResult = runCatching {
         Git.open(projectDir).use { git ->
             val command = git.pull()
             credentials?.let { command.setCredentialsProvider(UsernamePasswordCredentialsProvider(it.username, it.token)) }
             command.call()
         }
-    }.toResult("Pulled")
+    }.fold(
+        onSuccess = { result ->
+            when {
+                result.isSuccessful -> GitOperationResult(true, "Pulled")
+                result.mergeResult?.mergeStatus == MergeResult.MergeStatus.CONFLICTING -> {
+                    val files = result.mergeResult?.conflicts?.keys.orEmpty().joinToString(", ")
+                    GitOperationResult(false, "Pull resulted in conflicts in: $files")
+                }
+                else -> GitOperationResult(false, "Pull did not complete: ${result.mergeResult?.mergeStatus}")
+            }
+        },
+        onFailure = { GitOperationResult(false, it.message ?: it.toString()) }
+    )
+
+    /** Stages a single conflicted file once the user has hand-resolved its conflict markers. */
+    fun markResolved(projectDir: File, filePath: String): GitOperationResult = runCatching {
+        Git.open(projectDir).use { git -> git.add().addFilepattern(filePath).call() }
+    }.toResult("Marked resolved")
+
+    /** Bails out of an in-progress conflicted merge, discarding the partial merge state. */
+    fun abortMerge(projectDir: File): GitOperationResult = runCatching {
+        Git.open(projectDir).use { git -> git.reset().setMode(ResetCommand.ResetType.HARD).setRef("HEAD").call() }
+    }.toResult("Merge aborted")
 
     fun clone(remoteUrl: String, targetDir: File, credentials: GitCredentials?): GitOperationResult = runCatching {
         val command = Git.cloneRepository().setURI(remoteUrl).setDirectory(targetDir)

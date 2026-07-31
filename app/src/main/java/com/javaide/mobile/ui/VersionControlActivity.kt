@@ -3,6 +3,7 @@ package com.javaide.mobile.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.javaide.mobile.R
 import com.javaide.mobile.data.Logger
 import com.javaide.mobile.databinding.ActivityVersionControlBinding
+import com.javaide.mobile.databinding.ItemConflictBinding
 import com.javaide.mobile.vcs.GitCredentials
 import com.javaide.mobile.vcs.GitOperationResult
 import com.javaide.mobile.vcs.GitRepository
@@ -60,6 +62,7 @@ class VersionControlActivity : AppCompatActivity() {
         binding.buttonViewKey.setOnClickListener { showSigningKeyDialog() }
         binding.buttonPush.setOnClickListener { promptCredentialsAndRun(isPush = true) }
         binding.buttonPull.setOnClickListener { promptCredentialsAndRun(isPush = false) }
+        binding.buttonAbortMerge.setOnClickListener { confirmAbortMerge() }
 
         ensureRepoThenRefresh()
     }
@@ -115,11 +118,56 @@ class VersionControlActivity : AppCompatActivity() {
                         status.conflicting.forEach { appendLine("C  $it") }
                     }.trimEnd()
                 }
+                updateConflictsSection(status.conflicting)
             }
 
             val logResult = withContext(Dispatchers.IO) { GitRepository.log(projectDir) }
             logResult.onSuccess { commits -> adapter.submitList(commits) }
         }
+    }
+
+    /** Files with unresolved conflict markers, from the last successful status() call. */
+    private fun updateConflictsSection(conflicting: Set<String>) {
+        binding.containerConflictItems.removeAllViews()
+        if (conflicting.isEmpty()) {
+            binding.layoutConflicts.visibility = View.GONE
+            return
+        }
+        binding.layoutConflicts.visibility = View.VISIBLE
+        binding.textConflictsHeader.text = getString(R.string.label_conflicts, conflicting.size)
+        conflicting.sorted().forEach { path ->
+            val itemBinding = ItemConflictBinding.inflate(layoutInflater, binding.containerConflictItems, false)
+            itemBinding.textConflictFile.text = path
+            itemBinding.buttonOpenConflict.setOnClickListener {
+                val intent = Intent(this, EditorActivity::class.java)
+                intent.putExtra(EditorActivity.EXTRA_FILE_PATH, File(projectDir, path).absolutePath)
+                intent.putExtra(EditorActivity.EXTRA_PROJECT_PATH, projectDir.absolutePath)
+                startActivity(intent)
+            }
+            itemBinding.buttonMarkResolved.setOnClickListener {
+                lifecycleScope.launch {
+                    val result = withContext(Dispatchers.IO) { GitRepository.markResolved(projectDir, path) }
+                    onOperationDone("resolve", result)
+                    refresh()
+                }
+            }
+            binding.containerConflictItems.addView(itemBinding.root)
+        }
+    }
+
+    private fun confirmAbortMerge() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_abort_merge_title)
+            .setMessage(R.string.dialog_abort_merge_message)
+            .setPositiveButton(R.string.action_abort) { _, _ ->
+                lifecycleScope.launch {
+                    val result = withContext(Dispatchers.IO) { GitRepository.abortMerge(projectDir) }
+                    onOperationDone("abort merge", result)
+                    refresh()
+                }
+            }
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .show()
     }
 
     private fun performCommit() {
@@ -188,7 +236,9 @@ class VersionControlActivity : AppCompatActivity() {
                 }
             }
             onOperationDone(if (isPush) "push" else "pull", result)
-            if (result.success) refresh()
+            // Always refresh, even on failure -- a conflicting pull reports success=false but
+            // still needs the conflicts section to appear so the user can act on it.
+            refresh()
         }
     }
 
