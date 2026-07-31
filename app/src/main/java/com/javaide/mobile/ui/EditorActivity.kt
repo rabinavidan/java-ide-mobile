@@ -7,6 +7,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.javaide.mobile.R
@@ -14,6 +15,8 @@ import com.javaide.mobile.compiler.AndroidJarProvider
 import com.javaide.mobile.compiler.JavaCompiler
 import com.javaide.mobile.completion.DiagnosticSeverity
 import com.javaide.mobile.completion.DiagnosticsEngine
+import com.javaide.mobile.completion.ImportIndex
+import com.javaide.mobile.completion.ImportInserter
 import com.javaide.mobile.completion.SemanticJavaLanguage
 import com.javaide.mobile.data.AppDatabase
 import com.javaide.mobile.data.EditorState
@@ -30,8 +33,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.coroutines.resume
 
 class EditorActivity : AppCompatActivity() {
 
@@ -247,9 +252,64 @@ class EditorActivity : AppCompatActivity() {
                 toggleSearchBar(binding.layoutSearchBar.visibility != View.VISIBLE)
                 return true
             }
+            R.id.action_fix_imports -> {
+                fixImports()
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
     }
+
+    /**
+     * Scans the current buffer for ECJ's "X cannot be resolved to a type" errors, resolves each
+     * unresolved simple name against [ImportIndex] (android.jar's own class list), and inserts
+     * whichever imports it can -- prompting when a name has more than one candidate package.
+     */
+    private fun fixImports() {
+        val androidJar = androidJarFile ?: return
+        lifecycleScope.launch {
+            val issues = withContext(Dispatchers.IO) {
+                DiagnosticsEngine.analyze(androidJar, binding.codeEditor.text.toString(), file.name, projectClassesDir)
+            }
+            val unresolvedNames = issues.mapNotNull { it.unresolvedTypeName }.distinct()
+
+            val resolved = mutableListOf<String>()
+            for (name in unresolvedNames) {
+                val candidates = withContext(Dispatchers.IO) { ImportIndex.candidatesFor(androidJar, name) }
+                when {
+                    candidates.isEmpty() -> Unit
+                    candidates.size == 1 -> resolved += candidates[0]
+                    else -> chooseImport(name, candidates)?.let { resolved += it }
+                }
+            }
+
+            val toInsert = ImportInserter.pendingImports(binding.codeEditor.text.toString(), resolved)
+            if (toInsert.isEmpty()) {
+                Toast.makeText(this@EditorActivity, R.string.msg_no_import_fixes, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            val insertLine = ImportInserter.insertionLine(binding.codeEditor.text.toString())
+            val importBlock = toInsert.joinToString("") { "import $it;\n" }
+            binding.codeEditor.text.insert(insertLine, 0, importBlock)
+
+            Toast.makeText(
+                this@EditorActivity,
+                getString(R.string.msg_imports_added, toInsert.size),
+                Toast.LENGTH_SHORT
+            ).show()
+            runDiagnostics()
+        }
+    }
+
+    private suspend fun chooseImport(simpleName: String, candidates: List<String>): String? =
+        suspendCancellableCoroutine { cont ->
+            AlertDialog.Builder(this)
+                .setTitle(getString(R.string.dialog_choose_import_title, simpleName))
+                .setItems(candidates.toTypedArray()) { _, which -> cont.resume(candidates[which]) }
+                .setOnCancelListener { cont.resume(null) }
+                .show()
+        }
 
     private fun saveFile() {
         runCatching { file.writeText(binding.codeEditor.text.toString()) }
