@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
 }
 
 // ECJ needs android.jar on its compile classpath to compile Android source on-device.
@@ -129,6 +130,10 @@ dependencies {
     implementation(libs.r8)
     implementation(libs.arscLib)
     implementation(libs.apksig)
+
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 
     testImplementation(libs.junit)
     testImplementation(libs.allure.junit4)

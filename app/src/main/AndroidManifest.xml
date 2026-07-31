@@ -4,6 +4,7 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
+        android:name=".IdeApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -35,6 +36,11 @@
             android:name=".ui.BuildOutputActivity"
             android:exported="false"
             android:label="@string/title_build_output" />
+
+        <activity
+            android:name=".ui.HistoryActivity"
+            android:exported="false"
+            android:label="@string/title_history" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

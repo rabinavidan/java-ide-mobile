@@ -18,6 +18,8 @@ androidxTestExtJunit = "1.2.1"
 espressoCore = "3.6.1"
 allure = "2.29.0"
 aspectjweaver = "1.9.25"
+room = "2.6.1"
+ksp = "2.0.21-1.0.28"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -40,7 +42,11 @@ allure-junit4 = { group = "io.qameta.allure", name = "allure-junit4", version.re
 allure-junit4-aspect = { group = "io.qameta.allure", name = "allure-junit4-aspect", version.ref = "allure" }
 allure-commandline = { group = "io.qameta.allure", name = "allure-commandline", version.ref = "allure" }
 aspectjweaver = { group = "org.aspectj", name = "aspectjweaver", version.ref = "aspectjweaver" }
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
