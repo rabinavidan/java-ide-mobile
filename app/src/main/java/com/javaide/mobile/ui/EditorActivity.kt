@@ -9,11 +9,16 @@ import androidx.lifecycle.lifecycleScope
 import com.javaide.mobile.R
 import com.javaide.mobile.compiler.AndroidJarProvider
 import com.javaide.mobile.compiler.JavaCompiler
+import com.javaide.mobile.completion.DiagnosticSeverity
+import com.javaide.mobile.completion.DiagnosticsEngine
 import com.javaide.mobile.completion.SemanticJavaLanguage
 import com.javaide.mobile.data.AppDatabase
 import com.javaide.mobile.data.EditorState
 import com.javaide.mobile.databinding.ActivityEditorBinding
 import io.github.rosemoe.sora.event.ContentChangeEvent
+import io.github.rosemoe.sora.lang.diagnostic.DiagnosticDetail
+import io.github.rosemoe.sora.lang.diagnostic.DiagnosticRegion
+import io.github.rosemoe.sora.lang.diagnostic.DiagnosticsContainer
 import io.github.rosemoe.sora.langs.java.JavaLanguage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,11 +33,15 @@ class EditorActivity : AppCompatActivity() {
         const val EXTRA_FILE_PATH = "extra_file_path"
         const val EXTRA_PROJECT_PATH = "extra_project_path"
         private const val AUTO_SAVE_DEBOUNCE_MS = 1500L
+        private const val DIAGNOSTICS_DEBOUNCE_MS = 1500L
     }
 
     private lateinit var binding: ActivityEditorBinding
     private lateinit var file: File
     private var autoSaveJob: Job? = null
+    private var diagnosticsJob: Job? = null
+    private var androidJarFile: File? = null
+    private var projectClassesDir: File? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,8 +59,10 @@ class EditorActivity : AppCompatActivity() {
             binding.codeEditor.setEditorLanguage(JavaLanguage())
             lifecycleScope.launch {
                 val androidJar = withContext(Dispatchers.IO) { AndroidJarProvider.get(this@EditorActivity) }
+                androidJarFile = androidJar
                 val language = SemanticJavaLanguage(androidJar).apply { fileName = file.name }
                 binding.codeEditor.setEditorLanguage(language)
+                runDiagnostics()
 
                 if (projectPath != null) {
                     seedProjectClassesForCompletion(File(projectPath), androidJar, language)
@@ -61,7 +72,10 @@ class EditorActivity : AppCompatActivity() {
         binding.codeEditor.setText(file.readText())
         restoreCursorPosition()
 
-        binding.codeEditor.subscribeEvent(ContentChangeEvent::class.java) { _, _ -> scheduleAutoSave() }
+        binding.codeEditor.subscribeEvent(ContentChangeEvent::class.java) { _, _ ->
+            scheduleAutoSave()
+            scheduleDiagnostics()
+        }
     }
 
     /**
@@ -80,6 +94,37 @@ class EditorActivity : AppCompatActivity() {
             runCatching { JavaCompiler.compile(projectDir, classesDir, androidJar, extraSourceDirs) }
         }
         language.projectClassesDir = classesDir
+        projectClassesDir = classesDir
+        runDiagnostics()
+    }
+
+    private fun scheduleDiagnostics() {
+        diagnosticsJob?.cancel()
+        diagnosticsJob = lifecycleScope.launch {
+            delay(DIAGNOSTICS_DEBOUNCE_MS)
+            runDiagnostics()
+        }
+    }
+
+    /** Resolves the current buffer with ECJ and shows its compile problems as inline markers. */
+    private suspend fun runDiagnostics() {
+        val androidJar = androidJarFile ?: return
+        val text = binding.codeEditor.text.toString()
+        val issues = withContext(Dispatchers.IO) {
+            DiagnosticsEngine.analyze(androidJar, text, file.name, projectClassesDir)
+        }
+        val container = DiagnosticsContainer()
+        container.addDiagnostics(
+            issues.map { issue ->
+                val severity = if (issue.severity == DiagnosticSeverity.ERROR) {
+                    DiagnosticRegion.SEVERITY_ERROR
+                } else {
+                    DiagnosticRegion.SEVERITY_WARNING
+                }
+                DiagnosticRegion(issue.start, issue.end, severity, 0L, DiagnosticDetail(issue.message))
+            }
+        )
+        binding.codeEditor.diagnostics = container
     }
 
     override fun onPause() {
