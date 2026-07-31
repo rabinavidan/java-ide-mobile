@@ -32,6 +32,7 @@
             android:name=".ui.EditorActivity"
             android:exported="false"
             android:label="@string/title_editor"
+            android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize" />
 
         <activity

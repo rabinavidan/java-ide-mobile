@@ -1,5 +1,6 @@
 package com.javaide.mobile.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -10,6 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.javaide.mobile.R
 import com.javaide.mobile.compiler.AndroidJarProvider
 import com.javaide.mobile.compiler.JavaCompiler
@@ -23,6 +25,7 @@ import com.javaide.mobile.data.EditorState
 import com.javaide.mobile.databinding.ActivityEditorBinding
 import io.github.rosemoe.sora.event.ContentChangeEvent
 import io.github.rosemoe.sora.event.PublishSearchResultEvent
+import io.github.rosemoe.sora.lang.EmptyLanguage
 import io.github.rosemoe.sora.lang.diagnostic.DiagnosticDetail
 import io.github.rosemoe.sora.lang.diagnostic.DiagnosticRegion
 import io.github.rosemoe.sora.lang.diagnostic.DiagnosticsContainer
@@ -38,6 +41,18 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.coroutines.resume
 
+/** One open editor tab: which file, its buffer (cached while inactive), and its cursor position. */
+data class EditorTab(val file: File, var text: String, var cursorLine: Int = 0, var cursorColumn: Int = 0)
+
+/**
+ * A single instance is reused across every file opened for the same project (`singleTask`
+ * launch mode + [onNewIntent]) so files can be kept open as tabs instead of piling up separate
+ * Activities on the back stack. Only one [io.github.rosemoe.sora.widget.CodeEditor] backs all
+ * tabs -- sora-editor has no public way to swap in a different Content object -- so switching
+ * tabs caches/restores plain text + cursor position per tab rather than a live Content per tab;
+ * the tradeoff is that undo/redo history resets when you leave a tab and come back (auto-save
+ * still protects the actual text).
+ */
 class EditorActivity : AppCompatActivity() {
 
     companion object {
@@ -52,11 +67,17 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityEditorBinding
-    private lateinit var file: File
+    private lateinit var tabAdapter: EditorTabAdapter
+    private val tabs = mutableListOf<EditorTab>()
+    private var activeTabIndex = -1
+    private var currentProjectPath: String? = null
     private var autoSaveJob: Job? = null
     private var diagnosticsJob: Job? = null
     private var androidJarFile: File? = null
     private var projectClassesDir: File? = null
+
+    private val activeTab: EditorTab
+        get() = tabs[activeTabIndex]
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,26 +86,7 @@ class EditorActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val path = intent.getStringExtra(EXTRA_FILE_PATH) ?: error("Missing $EXTRA_FILE_PATH")
-        file = File(path)
-        title = file.name
-        val projectPath = intent.getStringExtra(EXTRA_PROJECT_PATH)
-
-        if (file.extension == "java") {
-            binding.codeEditor.setEditorLanguage(JavaLanguage())
-            lifecycleScope.launch {
-                val androidJar = withContext(Dispatchers.IO) { AndroidJarProvider.get(this@EditorActivity) }
-                androidJarFile = androidJar
-                val language = SemanticJavaLanguage(androidJar).apply { fileName = file.name }
-                binding.codeEditor.setEditorLanguage(language)
-                runDiagnostics()
-
-                if (projectPath != null) {
-                    seedProjectClassesForCompletion(File(projectPath), androidJar, language)
-                }
-            }
-        }
-        binding.codeEditor.setText(file.readText())
+        setUpTabStrip()
 
         binding.codeEditor.subscribeEvent(ContentChangeEvent::class.java) { _, _ ->
             scheduleAutoSave()
@@ -97,11 +99,142 @@ class EditorActivity : AppCompatActivity() {
         setUpSearchBar()
         setUpAccessoryBar()
 
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        val path = intent.getStringExtra(EXTRA_FILE_PATH) ?: error("Missing $EXTRA_FILE_PATH")
+        val projectPath = intent.getStringExtra(EXTRA_PROJECT_PATH)
+        val isNewTab = openOrSwitchToFile(path, projectPath)
+
         val jumpLine = intent.getIntExtra(EXTRA_JUMP_LINE, -1)
         if (jumpLine >= 0) {
             jumpToSearchResult(jumpLine, intent.getStringExtra(EXTRA_JUMP_QUERY).orEmpty())
+        } else if (isNewTab) {
+            restoreCursorPosition(activeTab)
+        }
+    }
+
+    private fun setUpTabStrip() {
+        tabAdapter = EditorTabAdapter(
+            onTabClick = { index ->
+                if (index != activeTabIndex) {
+                    flushActiveTab()
+                    switchToTab(index)
+                }
+            },
+            onTabClose = { index -> closeTab(index) }
+        )
+        binding.recyclerTabs.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        binding.recyclerTabs.adapter = tabAdapter
+
+        // Deliberately does NOT finish() this Activity: EditorActivity is singleTask, so tapping
+        // a file in the explorer that pops up here reuses this same alive instance via
+        // onNewIntent() and adds a tab, instead of losing every open tab to the back button.
+        binding.buttonOpenFile.setOnClickListener {
+            val projectPath = currentProjectPath ?: return@setOnClickListener
+            val intent = Intent(this, FileExplorerActivity::class.java)
+            intent.putExtra(FileExplorerActivity.EXTRA_PROJECT_PATH, projectPath)
+            intent.putExtra(FileExplorerActivity.EXTRA_PROJECT_NAME, File(projectPath).name)
+            startActivity(intent)
+        }
+    }
+
+    private fun renderTabStrip() {
+        tabAdapter.submitTabs(tabs, activeTabIndex)
+    }
+
+    /**
+     * Opens [filePath] as a tab -- switching to it if already open, otherwise creating a new one
+     * -- and returns whether this was a brand-new tab (as opposed to switching to one already
+     * open). Opening a file from a *different* project than the one currently loaded drops all
+     * existing tabs first: this instance is scoped to one project's tabs at a time.
+     */
+    private fun openOrSwitchToFile(filePath: String, projectPath: String?): Boolean {
+        if (projectPath != null && currentProjectPath != null && projectPath != currentProjectPath) {
+            flushActiveTab()
+            tabs.clear()
+            activeTabIndex = -1
+            androidJarFile = null
+            projectClassesDir = null
         } else {
-            restoreCursorPosition()
+            flushActiveTab()
+        }
+        if (currentProjectPath == null) currentProjectPath = projectPath
+
+        val targetPath = File(filePath).absolutePath
+        val existingIndex = tabs.indexOfFirst { it.file.absolutePath == targetPath }
+        return if (existingIndex >= 0) {
+            switchToTab(existingIndex)
+            false
+        } else {
+            val file = File(filePath)
+            tabs.add(EditorTab(file = file, text = file.readText()))
+            switchToTab(tabs.size - 1)
+            true
+        }
+    }
+
+    private fun switchToTab(index: Int) {
+        activeTabIndex = index
+        val tab = tabs[index]
+        title = tab.file.name
+        binding.codeEditor.setText(tab.text)
+        runCatching { binding.codeEditor.setSelection(tab.cursorLine, tab.cursorColumn) }
+        configureLanguageForActiveTab()
+        renderTabStrip()
+    }
+
+    private fun closeTab(index: Int) {
+        val wasActive = index == activeTabIndex
+        if (wasActive) flushActiveTab()
+        tabs.removeAt(index)
+        if (tabs.isEmpty()) {
+            finish()
+            return
+        }
+        when {
+            wasActive -> switchToTab((index - 1).coerceIn(0, tabs.size - 1))
+            index < activeTabIndex -> {
+                activeTabIndex -= 1
+                renderTabStrip()
+            }
+            else -> renderTabStrip()
+        }
+    }
+
+    /** Sets up syntax highlighting/completion/diagnostics for whichever tab is now active. */
+    private fun configureLanguageForActiveTab() {
+        val tab = activeTab
+        if (tab.file.extension != "java") {
+            binding.codeEditor.setEditorLanguage(EmptyLanguage())
+            return
+        }
+        binding.codeEditor.setEditorLanguage(JavaLanguage())
+        lifecycleScope.launch {
+            val androidJar = androidJarFile ?: withContext(Dispatchers.IO) {
+                AndroidJarProvider.get(this@EditorActivity)
+            }.also { androidJarFile = it }
+            // The user may have switched tabs again before this finished loading.
+            if (activeTab !== tab) return@launch
+
+            val language = SemanticJavaLanguage(androidJar).apply {
+                fileName = tab.file.name
+                projectClassesDir = this@EditorActivity.projectClassesDir
+            }
+            binding.codeEditor.setEditorLanguage(language)
+            runDiagnostics()
+
+            val projectPath = currentProjectPath
+            if (projectClassesDir == null && projectPath != null) {
+                seedProjectClassesForCompletion(File(projectPath), androidJar, language)
+            }
         }
     }
 
@@ -180,8 +313,9 @@ class EditorActivity : AppCompatActivity() {
     /**
      * Cross-file symbols (types/methods in other .java files of the project) only resolve once
      * they've been compiled to .class somewhere -- so compile the whole project once in the
-     * background when the editor opens, seeding completion even before an explicit Build/Run.
-     * This reflects the project as of the last successful compile, not live edits in other files.
+     * background the first time this instance needs it, seeding completion even before an
+     * explicit Build/Run. This reflects the project as of the last successful compile, not live
+     * edits in other files, and is shared across every tab of the same project.
      */
     private suspend fun seedProjectClassesForCompletion(projectDir: File, androidJar: File, language: SemanticJavaLanguage) {
         val classesDir = File(projectDir, "build/classes")
@@ -210,7 +344,7 @@ class EditorActivity : AppCompatActivity() {
         val androidJar = androidJarFile ?: return
         val text = binding.codeEditor.text.toString()
         val issues = withContext(Dispatchers.IO) {
-            DiagnosticsEngine.analyze(androidJar, text, file.name, projectClassesDir)
+            DiagnosticsEngine.analyze(androidJar, text, activeTab.file.name, projectClassesDir)
         }
         val container = DiagnosticsContainer()
         container.addDiagnostics(
@@ -229,7 +363,8 @@ class EditorActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         autoSaveJob?.cancel()
-        lifecycleScope.launch { persistState() }
+        captureActiveTabState()
+        tabs.getOrNull(activeTabIndex)?.let { tab -> lifecycleScope.launch { persistTabToDisk(tab) } }
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -269,7 +404,7 @@ class EditorActivity : AppCompatActivity() {
         val androidJar = androidJarFile ?: return
         lifecycleScope.launch {
             val issues = withContext(Dispatchers.IO) {
-                DiagnosticsEngine.analyze(androidJar, binding.codeEditor.text.toString(), file.name, projectClassesDir)
+                DiagnosticsEngine.analyze(androidJar, binding.codeEditor.text.toString(), activeTab.file.name, projectClassesDir)
             }
             val unresolvedNames = issues.mapNotNull { it.unresolvedTypeName }.distinct()
 
@@ -312,8 +447,13 @@ class EditorActivity : AppCompatActivity() {
         }
 
     private fun saveFile() {
-        runCatching { file.writeText(binding.codeEditor.text.toString()) }
-            .onSuccess { Toast.makeText(this, R.string.file_saved, Toast.LENGTH_SHORT).show() }
+        val tab = activeTab
+        val text = binding.codeEditor.text.toString()
+        runCatching { tab.file.writeText(text) }
+            .onSuccess {
+                tab.text = text
+                Toast.makeText(this, R.string.file_saved, Toast.LENGTH_SHORT).show()
+            }
             .onFailure { Toast.makeText(this, R.string.file_save_failed, Toast.LENGTH_SHORT).show() }
     }
 
@@ -321,28 +461,44 @@ class EditorActivity : AppCompatActivity() {
         autoSaveJob?.cancel()
         autoSaveJob = lifecycleScope.launch {
             delay(AUTO_SAVE_DEBOUNCE_MS)
-            persistState()
+            captureActiveTabState()
+            persistTabToDisk(tabs[activeTabIndex])
         }
     }
 
-    /** Snapshots the buffer + cursor on the main thread, then writes them off it. */
-    private suspend fun persistState() {
-        val text = binding.codeEditor.text.toString()
-        val line = binding.codeEditor.cursor.leftLine
-        val column = binding.codeEditor.cursor.leftColumn
+    /** Copies the live buffer/cursor into the active tab's model -- synchronous, no I/O. */
+    private fun captureActiveTabState() {
+        if (activeTabIndex !in tabs.indices) return
+        val tab = tabs[activeTabIndex]
+        tab.text = binding.codeEditor.text.toString()
+        tab.cursorLine = binding.codeEditor.cursor.leftLine
+        tab.cursorColumn = binding.codeEditor.cursor.leftColumn
+    }
+
+    /** Writes a tab's already-captured state to disk + Room. Safe to call after switching away. */
+    private suspend fun persistTabToDisk(tab: EditorTab) {
         withContext(Dispatchers.IO) {
-            runCatching { file.writeText(text) }
+            runCatching { tab.file.writeText(tab.text) }
             runCatching {
                 AppDatabase.get(this@EditorActivity).dao().upsertEditorState(
                     EditorState(
-                        filePath = file.absolutePath,
-                        cursorLine = line,
-                        cursorColumn = column,
+                        filePath = tab.file.absolutePath,
+                        cursorLine = tab.cursorLine,
+                        cursorColumn = tab.cursorColumn,
                         updatedAt = System.currentTimeMillis()
                     )
                 )
             }
         }
+    }
+
+    /** Captures + flushes whichever tab is currently active, e.g. before switching away from it. */
+    private fun flushActiveTab() {
+        if (activeTabIndex !in tabs.indices) return
+        autoSaveJob?.cancel()
+        captureActiveTabState()
+        val tab = tabs[activeTabIndex]
+        lifecycleScope.launch { persistTabToDisk(tab) }
     }
 
     /** Opened from a Find in Project result: scroll to the line and highlight the query. */
@@ -354,11 +510,15 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
-    private fun restoreCursorPosition() {
+    /** Only meaningful for a brand-new tab: an already-open tab already has its live cursor. */
+    private fun restoreCursorPosition(tab: EditorTab) {
         lifecycleScope.launch {
             val state = withContext(Dispatchers.IO) {
-                AppDatabase.get(this@EditorActivity).dao().getEditorState(file.absolutePath)
+                AppDatabase.get(this@EditorActivity).dao().getEditorState(tab.file.absolutePath)
             } ?: return@launch
+            if (activeTab !== tab) return@launch
+            tab.cursorLine = state.cursorLine
+            tab.cursorColumn = state.cursorColumn
             runCatching { binding.codeEditor.setSelection(state.cursorLine, state.cursorColumn) }
         }
     }
