@@ -111,4 +111,7 @@
     <string name="label_expected_output">Expected output</string>
     <string name="practice_passed">Passed</string>
     <string name="practice_failed">Failed</string>
+
+    <string name="title_find_in_project">Find in Project</string>
+    <string name="action_find_in_project">Find in project</string>
 </resources>

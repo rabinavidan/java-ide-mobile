@@ -38,6 +38,10 @@ class EditorActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_FILE_PATH = "extra_file_path"
         const val EXTRA_PROJECT_PATH = "extra_project_path"
+        /** 0-based line to scroll/select to, e.g. when opened from a Find in Project result. */
+        const val EXTRA_JUMP_LINE = "extra_jump_line"
+        /** Query to pre-fill in the find bar and highlight, alongside [EXTRA_JUMP_LINE]. */
+        const val EXTRA_JUMP_QUERY = "extra_jump_query"
         private const val AUTO_SAVE_DEBOUNCE_MS = 1500L
         private const val DIAGNOSTICS_DEBOUNCE_MS = 1500L
     }
@@ -76,7 +80,6 @@ class EditorActivity : AppCompatActivity() {
             }
         }
         binding.codeEditor.setText(file.readText())
-        restoreCursorPosition()
 
         binding.codeEditor.subscribeEvent(ContentChangeEvent::class.java) { _, _ ->
             scheduleAutoSave()
@@ -88,6 +91,13 @@ class EditorActivity : AppCompatActivity() {
 
         setUpSearchBar()
         setUpAccessoryBar()
+
+        val jumpLine = intent.getIntExtra(EXTRA_JUMP_LINE, -1)
+        if (jumpLine >= 0) {
+            jumpToSearchResult(jumpLine, intent.getStringExtra(EXTRA_JUMP_QUERY).orEmpty())
+        } else {
+            restoreCursorPosition()
+        }
     }
 
     /** Quick-insert bar for characters/actions that are awkward to reach on a soft keyboard. */
@@ -272,6 +282,15 @@ class EditorActivity : AppCompatActivity() {
                     )
                 )
             }
+        }
+    }
+
+    /** Opened from a Find in Project result: scroll to the line and highlight the query. */
+    private fun jumpToSearchResult(line: Int, query: String) {
+        runCatching { binding.codeEditor.setSelection(line, 0) }
+        if (query.isNotEmpty()) {
+            toggleSearchBar(true)
+            binding.editSearchQuery.setText(query)
         }
     }
 
