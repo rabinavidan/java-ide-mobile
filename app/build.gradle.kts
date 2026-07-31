@@ -48,14 +48,13 @@ android {
     }
 
     sourceSets {
+        // Exercise fixtures used to live only in test/androidTest; now the in-app Practice screen
+        // needs them too, so they're compiled once as part of main and test/androidTest pick them
+        // up transitively (their classpaths already include the tested app's main classes) --
+        // adding the dir to all three would compile InterviewExercises.kt twice and collide as a
+        // duplicate class when the androidTest APK is dexed against the app under test.
         getByName("main") {
             assets.srcDir(androidJarAssetDir)
-        }
-        // Shared between local (JVM) and instrumented (on-device) tests, e.g. exercise fixtures.
-        getByName("test") {
-            java.srcDir("src/testShared/java")
-        }
-        getByName("androidTest") {
             java.srcDir("src/testShared/java")
         }
     }

@@ -46,9 +46,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_history) {
-            startActivity(Intent(this, HistoryActivity::class.java))
-            return true
+        when (item.itemId) {
+            R.id.action_history -> {
+                startActivity(Intent(this, HistoryActivity::class.java))
+                return true
+            }
+            R.id.action_practice -> {
+                startActivity(Intent(this, PracticeActivity::class.java))
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
     }
