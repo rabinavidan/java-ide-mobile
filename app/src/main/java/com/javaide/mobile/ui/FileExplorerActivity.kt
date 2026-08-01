@@ -6,7 +6,10 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.javaide.mobile.R
@@ -17,8 +20,10 @@ import com.javaide.mobile.compiler.JavaRunner
 import com.javaide.mobile.compiler.ManifestUtils
 import com.javaide.mobile.compiler.Packager
 import com.javaide.mobile.compiler.ResourceCompiler
+import com.javaide.mobile.data.AppDatabase
 import com.javaide.mobile.data.Logger
 import com.javaide.mobile.databinding.ActivityFileExplorerBinding
+import com.javaide.mobile.util.FileOps
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,9 +57,15 @@ class FileExplorerActivity : AppCompatActivity() {
         title = intent.getStringExtra(EXTRA_PROJECT_NAME) ?: currentDir.name
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        adapter = FileAdapter(onFileClick = ::onEntryClick)
+        adapter = FileAdapter(
+            onFileClick = ::onEntryClick,
+            onRenameClick = ::showRenameEntryDialog,
+            onDeleteClick = ::confirmDeleteEntry
+        )
         binding.recyclerFiles.layoutManager = LinearLayoutManager(this)
         binding.recyclerFiles.adapter = adapter
+
+        binding.fabNewEntry.setOnClickListener { showNewEntryMenu(it) }
 
         loadEntries()
     }
@@ -239,6 +250,144 @@ class FileExplorerActivity : AppCompatActivity() {
             intent.putExtra(EditorActivity.EXTRA_FILE_PATH, entry.absolutePath)
             intent.putExtra(EditorActivity.EXTRA_PROJECT_PATH, projectPath)
             startActivity(intent)
+        }
+    }
+
+    private fun showNewEntryMenu(anchor: View) {
+        val popup = PopupMenu(this, anchor)
+        popup.menuInflater.inflate(R.menu.menu_new_entry, popup.menu)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_new_file -> {
+                    showNewFileDialog()
+                    true
+                }
+                R.id.action_new_folder -> {
+                    showNewFolderDialog()
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun showNewFileDialog() {
+        val input = EditText(this).apply { hint = getString(R.string.hint_file_name) }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_new_file_title)
+            .setView(input)
+            .setPositiveButton(R.string.dialog_create) { _, _ ->
+                val name = input.text?.toString()?.trim().orEmpty()
+                createEntry(name) { parent -> FileOps.createFile(File(projectPath), parent, name) }
+                    ?.let { onEntryClick(it) }
+            }
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .show()
+    }
+
+    private fun showNewFolderDialog() {
+        val input = EditText(this).apply { hint = getString(R.string.hint_folder_name) }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_new_folder_title)
+            .setView(input)
+            .setPositiveButton(R.string.dialog_create) { _, _ ->
+                val name = input.text?.toString()?.trim().orEmpty()
+                createEntry(name) { parent -> FileOps.createFolder(parent, name) }
+            }
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .show()
+    }
+
+    /** Validates [name], creates the entry via [create], refreshes the list, and returns it on success. */
+    private fun createEntry(name: String, create: (File) -> File): File? {
+        if (name.isEmpty() || !FileOps.isValidFileName(name)) {
+            Toast.makeText(this, R.string.error_file_name_required, Toast.LENGTH_SHORT).show()
+            return null
+        }
+        if (File(currentDir, name).exists()) {
+            Toast.makeText(this, R.string.error_file_exists, Toast.LENGTH_SHORT).show()
+            return null
+        }
+        val created = runCatching { create(currentDir) }
+            .onFailure { Logger.error(this, "file", "Failed to create '$name': ${it.message}") }
+            .onFailure { Toast.makeText(this, R.string.error_file_create_failed, Toast.LENGTH_SHORT).show() }
+            .getOrNull()
+        if (created != null) {
+            Logger.info(this, "file", "Created '${created.name}'")
+            loadEntries()
+        }
+        return created
+    }
+
+    private fun showRenameEntryDialog(entry: File) {
+        val input = EditText(this).apply { setText(entry.name) }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_rename_file_title)
+            .setView(input)
+            .setPositiveButton(R.string.action_rename) { _, _ ->
+                val newName = input.text?.toString()?.trim().orEmpty()
+                renameEntry(entry, newName)
+            }
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .show()
+    }
+
+    private fun renameEntry(entry: File, newName: String) {
+        if (newName == entry.name) return
+        if (newName.isEmpty() || !FileOps.isValidFileName(newName)) {
+            Toast.makeText(this, R.string.error_file_name_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (File(entry.parentFile, newName).exists()) {
+            Toast.makeText(this, R.string.error_file_exists, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val oldPath = entry.absolutePath
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) { runCatching { FileOps.renameEntry(entry, newName) } }
+            result
+                .onSuccess {
+                    withContext(Dispatchers.IO) {
+                        AppDatabase.get(this@FileExplorerActivity).dao().deleteEditorStatesUnderPath(oldPath)
+                    }
+                    Logger.info(this@FileExplorerActivity, "file", "Renamed '${entry.name}' to '$newName'")
+                    Toast.makeText(this@FileExplorerActivity, R.string.msg_file_renamed, Toast.LENGTH_SHORT).show()
+                    loadEntries()
+                }
+                .onFailure {
+                    Logger.error(this@FileExplorerActivity, "file", "Failed to rename '${entry.name}': ${it.message}")
+                    Toast.makeText(this@FileExplorerActivity, R.string.error_file_rename_failed, Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
+
+    private fun confirmDeleteEntry(entry: File) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_delete_file_title)
+            .setMessage(getString(R.string.dialog_delete_file_message, entry.name))
+            .setPositiveButton(R.string.action_delete) { _, _ -> deleteEntry(entry) }
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .show()
+    }
+
+    private fun deleteEntry(entry: File) {
+        val path = entry.absolutePath
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) { runCatching { FileOps.deleteEntry(entry) } }
+            result
+                .onSuccess {
+                    withContext(Dispatchers.IO) {
+                        AppDatabase.get(this@FileExplorerActivity).dao().deleteEditorStatesUnderPath(path)
+                    }
+                    Logger.info(this@FileExplorerActivity, "file", "Deleted '${entry.name}'")
+                    Toast.makeText(this@FileExplorerActivity, R.string.msg_file_deleted, Toast.LENGTH_SHORT).show()
+                    loadEntries()
+                }
+                .onFailure {
+                    Logger.error(this@FileExplorerActivity, "file", "Failed to delete '${entry.name}': ${it.message}")
+                    Toast.makeText(this@FileExplorerActivity, R.string.error_file_delete_failed, Toast.LENGTH_SHORT).show()
+                }
         }
     }
 }
