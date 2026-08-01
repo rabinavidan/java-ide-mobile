@@ -32,4 +32,18 @@ object ProjectStorage {
         ProjectTemplate.create(projectDir, name, packageName, type)
         return projectDir
     }
+
+    /** Renames a project directory in place. Throws if [newName] is invalid or already taken. */
+    fun renameProject(context: Context, project: File, newName: String): File {
+        check(isValidProjectName(newName)) { "Invalid project name: $newName" }
+        val target = File(projectsRoot(context), newName)
+        check(!target.exists()) { "Project already exists: $newName" }
+        check(project.renameTo(target)) { "Failed to rename ${project.name} to $newName" }
+        return target
+    }
+
+    /** Deletes a project directory and everything under it. */
+    fun deleteProject(project: File) {
+        check(project.deleteRecursively()) { "Failed to delete ${project.name}" }
+    }
 }

@@ -19,4 +19,8 @@ interface AppDao {
 
     @Query("SELECT * FROM editor_state WHERE filePath = :filePath LIMIT 1")
     suspend fun getEditorState(filePath: String): EditorState?
+
+    /** Cleans up cursor-position rows left behind under a renamed/deleted project directory. */
+    @Query("DELETE FROM editor_state WHERE filePath LIKE :pathPrefix || '%'")
+    suspend fun deleteEditorStatesUnderPath(pathPrefix: String)
 }
