@@ -185,4 +185,7 @@
     <string name="msg_library_added">Added library %1$s</string>
     <string name="error_library_not_jar">Please choose a .jar file</string>
     <string name="error_library_add_failed">Failed to add library</string>
+
+    <string name="action_go_to_definition">Go to definition</string>
+    <string name="msg_no_definition_found">No definition found</string>
 </resources>

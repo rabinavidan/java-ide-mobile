@@ -13,4 +13,8 @@
         android:id="@+id/action_fix_imports"
         android:title="@string/action_fix_imports"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_go_to_definition"
+        android:title="@string/action_go_to_definition"
+        app:showAsAction="never" />
 </menu>
