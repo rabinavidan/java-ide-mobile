@@ -160,4 +160,23 @@
     <string name="dialog_delete_project_message">This permanently deletes \"%1$s\" and everything in it. This cannot be undone.</string>
     <string name="error_project_delete_failed">Failed to delete project</string>
     <string name="msg_project_deleted">Project deleted</string>
+
+    <string name="action_new_file">New file</string>
+    <string name="action_new_folder">New folder</string>
+    <string name="dialog_new_file_title">New file</string>
+    <string name="dialog_new_folder_title">New folder</string>
+    <string name="hint_file_name">File name (e.g. Helper.java)</string>
+    <string name="hint_folder_name">Folder name</string>
+    <string name="error_file_name_required">Enter a valid name</string>
+    <string name="error_file_exists">A file or folder with this name already exists</string>
+    <string name="error_file_create_failed">Failed to create</string>
+
+    <string name="action_file_menu">File options</string>
+    <string name="dialog_rename_file_title">Rename</string>
+    <string name="error_file_rename_failed">Failed to rename</string>
+    <string name="msg_file_renamed">Renamed</string>
+    <string name="dialog_delete_file_title">Delete?</string>
+    <string name="dialog_delete_file_message">This permanently deletes \"%1$s\". This cannot be undone.</string>
+    <string name="error_file_delete_failed">Failed to delete</string>
+    <string name="msg_file_deleted">Deleted</string>
 </resources>
