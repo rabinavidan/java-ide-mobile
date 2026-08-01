@@ -23,6 +23,7 @@ import com.javaide.mobile.compiler.ResourceCompiler
 import com.javaide.mobile.data.AppDatabase
 import com.javaide.mobile.data.Logger
 import com.javaide.mobile.databinding.ActivityFileExplorerBinding
+import com.javaide.mobile.util.ClassRenamer
 import com.javaide.mobile.util.FileOps
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -344,15 +345,30 @@ class FileExplorerActivity : AppCompatActivity() {
             return
         }
         val oldPath = entry.absolutePath
+        // Only a candidate for a project-wide class rename if both sides are .java files --
+        // renaming to/from a non-.java name is just a plain file rename.
+        val oldClassName = entry.nameWithoutExtension.takeIf { entry.extension == "java" && newName.endsWith(".java") }
+        val newClassName = newName.removeSuffix(".java").takeIf { oldClassName != null }
+
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) { runCatching { FileOps.renameEntry(entry, newName) } }
             result
-                .onSuccess {
+                .onSuccess { renamed ->
                     withContext(Dispatchers.IO) {
                         AppDatabase.get(this@FileExplorerActivity).dao().deleteEditorStatesUnderPath(oldPath)
                     }
+                    val message = if (oldClassName != null && newClassName != null &&
+                        ClassRenamer.isClassDeclaration(renamed, oldClassName)
+                    ) {
+                        val changedFiles = withContext(Dispatchers.IO) {
+                            ClassRenamer.renameAcrossProject(File(projectPath), oldClassName, newClassName)
+                        }
+                        getString(R.string.msg_class_renamed, oldClassName, newClassName, changedFiles)
+                    } else {
+                        getString(R.string.msg_file_renamed)
+                    }
                     Logger.info(this@FileExplorerActivity, "file", "Renamed '${entry.name}' to '$newName'")
-                    Toast.makeText(this@FileExplorerActivity, R.string.msg_file_renamed, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@FileExplorerActivity, message, Toast.LENGTH_LONG).show()
                     loadEntries()
                 }
                 .onFailure {
