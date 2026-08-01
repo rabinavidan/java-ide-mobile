@@ -148,4 +148,16 @@
 
     <string name="help_search_title">Find in Project</string>
     <string name="help_search_body">Search every file in a project at once from the file explorer\'s overflow menu, then tap a result to jump straight to it in the editor.</string>
+
+    <string name="action_project_menu">Project options</string>
+    <string name="glyph_overflow_menu">⋮</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_delete">Delete</string>
+    <string name="dialog_rename_project_title">Rename project</string>
+    <string name="error_project_rename_failed">Failed to rename project</string>
+    <string name="msg_project_renamed">Project renamed</string>
+    <string name="dialog_delete_project_title">Delete project?</string>
+    <string name="dialog_delete_project_message">This permanently deletes \"%1$s\" and everything in it. This cannot be undone.</string>
+    <string name="error_project_delete_failed">Failed to delete project</string>
+    <string name="msg_project_deleted">Project deleted</string>
 </resources>
