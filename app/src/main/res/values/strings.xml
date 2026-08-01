@@ -124,4 +124,28 @@
     <string name="glyph_close_tab">×</string>
     <string name="action_open_file">Open another file</string>
     <string name="glyph_add_tab">+</string>
+
+    <string name="title_help">Help</string>
+    <string name="action_help">Help</string>
+    <string name="dialog_welcome_title">Welcome to Java IDE</string>
+    <string name="dialog_welcome_message">Write, compile, and run Java and Android projects right on your phone. Tap Help (?) anytime for a guide to what\'s here.</string>
+    <string name="dialog_got_it">Got it</string>
+
+    <string name="help_projects_title">Projects</string>
+    <string name="help_projects_body">\"Java practice\" projects are a single file you can Run instantly, compiled and executed on the spot — good for quick snippets and algorithms. \"Android app\" projects are full projects: Build compiles, packages, and signs a real, installable APK.</string>
+
+    <string name="help_editor_title">Editor</string>
+    <string name="help_editor_body">Syntax highlighting, autocomplete, and inline error/warning markers update as you type. Fix Imports adds missing import statements automatically. Find/Replace searches the open file. You can keep several files open at once as tabs — tap + to open another without losing your place.</string>
+
+    <string name="help_build_run_title">Build &amp; Run</string>
+    <string name="help_build_run_body">Build compiles, packages, and signs a full installable APK for Android app projects. Run compiles and executes a single file immediately without packaging — the fast path for checking a snippet\'s output.</string>
+
+    <string name="help_vcs_title">Version Control</string>
+    <string name="help_vcs_body">Initialize a git repository, stage and commit changes (optionally GPG-signed), and push/pull with a username and personal access token. If a pull leaves conflicts, resolve the markers right in the editor, then mark them resolved — or abort the merge entirely.</string>
+
+    <string name="help_practice_title">Practice</string>
+    <string name="help_practice_body">30 classic coding-interview exercises grouped by topic, each with a working reference solution you can read, edit, and run with Run &amp; Check to compare against its known-correct expected output.</string>
+
+    <string name="help_search_title">Find in Project</string>
+    <string name="help_search_body">Search every file in a project at once from the file explorer\'s overflow menu, then tap a result to jump straight to it in the editor.</string>
 </resources>

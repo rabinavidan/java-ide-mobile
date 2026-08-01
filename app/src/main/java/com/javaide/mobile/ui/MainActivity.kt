@@ -17,6 +17,11 @@ import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
+    private companion object {
+        const val PREFS_NAME = "onboarding"
+        const val PREF_HAS_SEEN_WELCOME = "has_seen_welcome"
+    }
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: ProjectAdapter
 
@@ -33,6 +38,20 @@ class MainActivity : AppCompatActivity() {
         binding.fabNewProject.setOnClickListener { showNewProjectDialog() }
 
         refreshProjects()
+        showWelcomeDialogIfFirstLaunch()
+    }
+
+    /** Shown once, ever, on the very first launch -- points to the always-available Help screen. */
+    private fun showWelcomeDialogIfFirstLaunch() {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        if (prefs.getBoolean(PREF_HAS_SEEN_WELCOME, false)) return
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_welcome_title)
+            .setMessage(R.string.dialog_welcome_message)
+            .setPositiveButton(R.string.dialog_got_it, null)
+            .setOnDismissListener { prefs.edit().putBoolean(PREF_HAS_SEEN_WELCOME, true).apply() }
+            .show()
     }
 
     override fun onResume() {
@@ -53,6 +72,10 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.action_practice -> {
                 startActivity(Intent(this, PracticeActivity::class.java))
+                return true
+            }
+            R.id.action_help -> {
+                startActivity(Intent(this, HelpActivity::class.java))
                 return true
             }
         }
