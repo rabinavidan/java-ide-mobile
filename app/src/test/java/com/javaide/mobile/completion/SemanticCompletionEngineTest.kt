@@ -1,6 +1,7 @@
 package com.javaide.mobile.completion
 
 import com.javaide.mobile.compiler.JavaCompiler
+import com.javaide.mobile.compiler.TestLibJarBuilder
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -96,5 +97,30 @@ class SemanticCompletionEngineTest {
         val result = SemanticCompletionEngine.complete(androidJar, source, cursor, "Foo.java")
 
         assertEquals(0, result.prefixLength)
+    }
+
+    @Test
+    fun dotCompletionResolvesMembersOfALibJarType() {
+        val libJar = TestLibJarBuilder.build(tempFolder.newFolder("lib-work"), androidJar)
+
+        val source = """
+            |import testlib.Lib;
+            |public class Foo {
+            |    void bar() {
+            |        Lib l = new Lib();
+            |        l.va
+            |    }
+            |}
+        """.trimMargin()
+        val cursor = source.lastIndexOf("va") + "va".length()
+
+        val result = SemanticCompletionEngine.complete(
+            androidJar, source, cursor, "Foo.java", libJars = listOf(libJar)
+        )
+
+        assertEquals(2, result.prefixLength)
+        val value = result.suggestions.first { it.name == "value" }
+        assertEquals(SemanticKind.FIELD, value.kind)
+        assertEquals("int", value.detail)
     }
 }

@@ -14,7 +14,8 @@ object JavaCompiler {
         projectDir: File,
         outputDir: File,
         androidJar: File,
-        extraSourceDirs: List<File> = emptyList()
+        extraSourceDirs: List<File> = emptyList(),
+        libJars: List<File> = emptyList()
     ): CompileResult {
         val sourceFiles = (listOf(File(projectDir, "src/main/java")) + extraSourceDirs)
             .flatMap { dir -> dir.walkTopDown().filter { it.isFile && it.extension == "java" } }
@@ -30,6 +31,8 @@ object JavaCompiler {
         val outWriter = StringWriter()
         val errWriter = StringWriter()
 
+        val classpath = (listOf(androidJar) + libJars).joinToString(File.pathSeparator) { it.absolutePath }
+
         val args = arrayOf(
             "-source", "1.8",
             "-target", "1.8",
@@ -37,7 +40,7 @@ object JavaCompiler {
             "-proc:none",
             "-nowarn",
             "-d", outputDir.absolutePath,
-            "-cp", androidJar.absolutePath
+            "-cp", classpath
         ) + sourceFiles
 
         // systemExitWhenFinished must be false: the default calls System.exit() on

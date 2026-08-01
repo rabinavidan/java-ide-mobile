@@ -49,7 +49,8 @@ object SemanticCompletionEngine {
         fullText: String,
         cursor: Int,
         fileName: String,
-        projectClassesDir: File? = null
+        projectClassesDir: File? = null,
+        libJars: List<File> = emptyList()
     ): SemanticCompletionResult {
         var prefixStart = cursor
         while (prefixStart > 0 && Character.isJavaIdentifierPart(fullText[prefixStart - 1])) {
@@ -63,9 +64,11 @@ object SemanticCompletionEngine {
             PLACEHOLDER + (if (dotMode) "()" else "") +
             fullText.substring(cursor)
 
-        val classpath = listOfNotNull(
-            androidJar.absolutePath,
-            projectClassesDir?.takeIf { it.isDirectory }?.absolutePath
+        val classpath = (
+            listOfNotNull(
+                androidJar.absolutePath,
+                projectClassesDir?.takeIf { it.isDirectory }?.absolutePath
+            ) + libJars.map { it.absolutePath }
         ).toTypedArray()
         val nameEnv = FileSystem(classpath, arrayOf(), "UTF-8")
         val options = CompilerOptions()

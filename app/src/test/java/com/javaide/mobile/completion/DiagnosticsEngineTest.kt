@@ -1,6 +1,7 @@
 package com.javaide.mobile.completion
 
 import com.javaide.mobile.compiler.JavaCompiler
+import com.javaide.mobile.compiler.TestLibJarBuilder
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -104,5 +105,25 @@ class DiagnosticsEngineTest {
 
         assertTrue(withoutClasspath.any { it.unresolvedTypeName == "Helper" })
         assertTrue(withClasspath.none { it.unresolvedTypeName == "Helper" })
+    }
+
+    @Test
+    fun libJarResolvesATypeFromAThirdPartyDependencyJar() {
+        val libJar = TestLibJarBuilder.build(tempFolder.newFolder("lib-work"), androidJar)
+
+        val source = """
+            |import testlib.Lib;
+            |public class Main {
+            |    public void run() {
+            |        Lib lib = new Lib();
+            |    }
+            |}
+        """.trimMargin()
+
+        val withoutLibJar = DiagnosticsEngine.analyze(androidJar, source, "Main.java")
+        val withLibJar = DiagnosticsEngine.analyze(androidJar, source, "Main.java", libJars = listOf(libJar))
+
+        assertTrue(withoutLibJar.any { it.unresolvedTypeName == "Lib" })
+        assertTrue(withLibJar.none { it.unresolvedTypeName == "Lib" })
     }
 }
