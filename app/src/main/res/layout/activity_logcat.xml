@@ -9,46 +9,29 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/ide_primary"
-        android:title="@string/title_build_output"
+        android:title="@string/title_logcat"
         android:titleTextColor="@android:color/white" />
 
-    <TextView
-        android:id="@+id/textBuildStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:textColor="@android:color/white"
-        android:textStyle="bold" />
-
     <LinearLayout
-        android:id="@+id/layoutActions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp"
-        android:visibility="gone">
+        android:padding="8dp">
 
         <Button
-            android:id="@+id/buttonInstall"
+            android:id="@+id/buttonRefresh"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/action_install" />
-
-        <Button
-            android:id="@+id/buttonLaunch"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/action_launch" />
-
-        <Button
-            android:id="@+id/buttonViewLogs"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/action_view_logs" />
+            android:text="@string/action_refresh" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/textLogcatMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:visibility="gone" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -59,7 +42,7 @@
             android:layout_height="wrap_content">
 
             <TextView
-                android:id="@+id/textBuildLog"
+                android:id="@+id/textLogcatOutput"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="16dp"

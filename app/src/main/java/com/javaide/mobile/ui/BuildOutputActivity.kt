@@ -1,5 +1,6 @@
 package com.javaide.mobile.ui
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
@@ -49,6 +50,12 @@ class BuildOutputActivity : AppCompatActivity() {
             }
             binding.buttonLaunch.setOnClickListener {
                 ApkInstaller.launch(this, packageName)
+            }
+            binding.buttonViewLogs.setOnClickListener {
+                startActivity(
+                    Intent(this, LogcatActivity::class.java)
+                        .putExtra(LogcatActivity.EXTRA_PACKAGE_NAME, packageName)
+                )
             }
         }
     }

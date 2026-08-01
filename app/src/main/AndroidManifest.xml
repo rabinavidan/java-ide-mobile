@@ -41,6 +41,11 @@
             android:label="@string/title_build_output" />
 
         <activity
+            android:name=".ui.LogcatActivity"
+            android:exported="false"
+            android:label="@string/title_logcat" />
+
+        <activity
             android:name=".ui.HistoryActivity"
             android:exported="false"
             android:label="@string/title_history" />
