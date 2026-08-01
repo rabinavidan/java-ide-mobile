@@ -16,6 +16,8 @@ import com.javaide.mobile.R
 import com.javaide.mobile.compiler.AndroidJarProvider
 import com.javaide.mobile.compiler.JavaCompiler
 import com.javaide.mobile.compiler.LibJars
+import com.javaide.mobile.completion.DefinitionFinder
+import com.javaide.mobile.completion.DefinitionTarget
 import com.javaide.mobile.completion.DiagnosticSeverity
 import com.javaide.mobile.completion.DiagnosticsEngine
 import com.javaide.mobile.completion.ImportIndex
@@ -24,6 +26,7 @@ import com.javaide.mobile.completion.SemanticJavaLanguage
 import com.javaide.mobile.data.AppDatabase
 import com.javaide.mobile.data.EditorState
 import com.javaide.mobile.databinding.ActivityEditorBinding
+import com.javaide.mobile.util.ClassRenamer
 import io.github.rosemoe.sora.event.ContentChangeEvent
 import io.github.rosemoe.sora.event.PublishSearchResultEvent
 import io.github.rosemoe.sora.lang.EmptyLanguage
@@ -398,8 +401,47 @@ class EditorActivity : AppCompatActivity() {
                 fixImports()
                 return true
             }
+            R.id.action_go_to_definition -> {
+                goToDefinition()
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    /**
+     * Resolves the symbol at the cursor with DefinitionFinder and jumps to it: an exact offset
+     * within this same file, or -- for a type declared elsewhere in the project -- switches to
+     * that file (opening it as a new tab if it wasn't already) and scrolls to its declaration line.
+     */
+    private fun goToDefinition() {
+        val androidJar = androidJarFile ?: return
+        val text = binding.codeEditor.text.toString()
+        val cursor = binding.codeEditor.cursor.left
+        lifecycleScope.launch {
+            val target = withContext(Dispatchers.IO) {
+                DefinitionFinder.find(androidJar, text, cursor, activeTab.file.name, projectClassesDir, currentLibJars())
+            }
+            when (target) {
+                is DefinitionTarget.SameFile -> {
+                    val position = binding.codeEditor.text.indexer.getCharPosition(target.offset)
+                    runCatching { binding.codeEditor.setSelection(position.line, position.column) }
+                }
+                is DefinitionTarget.OtherProjectFile -> {
+                    val projectPath = currentProjectPath
+                    val location = projectPath?.let { path ->
+                        withContext(Dispatchers.IO) { ClassRenamer.findDeclaration(File(path), target.simpleName) }
+                    }
+                    if (location != null) {
+                        openOrSwitchToFile(location.file.absolutePath, projectPath)
+                        runCatching { binding.codeEditor.setSelection(location.lineNumber, 0) }
+                    } else {
+                        Toast.makeText(this@EditorActivity, R.string.msg_no_definition_found, Toast.LENGTH_SHORT).show()
+                    }
+                }
+                null -> Toast.makeText(this@EditorActivity, R.string.msg_no_definition_found, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     /**

@@ -143,4 +143,30 @@ class ClassRenamerTest {
         assertTrue(generated.readText().contains("Helper"))
         assertTrue(internal.readText().contains("Helper"))
     }
+
+    @Test
+    fun findDeclarationLocatesFileAndZeroBasedLineNumber() {
+        val projectDir = tempFolder.newFolder("Proj6")
+        File(projectDir, "src").mkdirs()
+        File(projectDir, "src/Helper.java").writeText(
+            "package com.example;\n" +
+                "\n" +
+                "public class Helper {\n" +
+                "}\n"
+        )
+
+        val location = ClassRenamer.findDeclaration(projectDir, "Helper")
+
+        assertEquals(File(projectDir, "src/Helper.java"), location?.file)
+        assertEquals(2, location?.lineNumber)
+    }
+
+    @Test
+    fun findDeclarationReturnsNullWhenNoFileDeclaresTheType() {
+        val projectDir = tempFolder.newFolder("Proj7")
+        File(projectDir, "src").mkdirs()
+        File(projectDir, "src/Other.java").writeText("public class Other {}\n")
+
+        assertEquals(null, ClassRenamer.findDeclaration(projectDir, "Helper"))
+    }
 }

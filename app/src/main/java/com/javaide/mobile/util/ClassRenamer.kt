@@ -26,6 +26,30 @@ object ClassRenamer {
         return declaration.containsMatchIn(text)
     }
 
+    /** A type's declaring file and 0-based declaration line, for jumping to it in the editor. */
+    data class TypeLocation(val file: File, val lineNumber: Int)
+
+    /**
+     * Finds which .java file under [projectDir] declares a top-level class/interface/enum named
+     * [simpleName], for cross-file "Go to Definition" jumps (see DefinitionFinder). Name-based,
+     * like [isClassDeclaration] itself -- not exact reference resolution, so an unrelated type that
+     * happens to share the name (in a different project than intended, or after a stale rename)
+     * would be found instead; accepted for the same reasons as this class's other limitations.
+     */
+    fun findDeclaration(projectDir: File, simpleName: String): TypeLocation? {
+        val declaration = Regex("""\b(?:class|interface|enum)\s+${Regex.escape(simpleName)}\b""")
+        projectDir.walkTopDown()
+            .onEnter { it.name !in SKIP_DIR_NAMES }
+            .filter { it.isFile && it.extension == "java" }
+            .forEach { file ->
+                val text = runCatching { file.readText() }.getOrNull() ?: return@forEach
+                val match = declaration.find(text) ?: return@forEach
+                val lineNumber = text.substring(0, match.range.first).count { it == '\n' }
+                return TypeLocation(file, lineNumber)
+            }
+        return null
+    }
+
     /**
      * Rewrites every whole-word occurrence of [oldName] to [newName] in every .java file under
      * [projectDir] (skipping build/.git), including the declaration itself. Returns how many
