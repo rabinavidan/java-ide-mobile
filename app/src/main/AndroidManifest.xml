@@ -66,6 +66,11 @@
             android:label="@string/title_find_in_project"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".ui.HelpActivity"
+            android:exported="false"
+            android:label="@string/title_help" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
