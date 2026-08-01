@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.javaide.mobile.R
 import com.javaide.mobile.compiler.AndroidJarProvider
 import com.javaide.mobile.compiler.JavaCompiler
+import com.javaide.mobile.compiler.LibJars
 import com.javaide.mobile.completion.DiagnosticSeverity
 import com.javaide.mobile.completion.DiagnosticsEngine
 import com.javaide.mobile.completion.ImportIndex
@@ -209,6 +210,11 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
+    /** Third-party .jar dependencies for the current project (see LibJars), recomputed fresh each
+     * time since a library can be added mid-session via the file explorer's "Add library" action. */
+    private fun currentLibJars(): List<File> =
+        currentProjectPath?.let { LibJars.jarsIn(File(it)) } ?: emptyList()
+
     /** Sets up syntax highlighting/completion/diagnostics for whichever tab is now active. */
     private fun configureLanguageForActiveTab() {
         val tab = activeTab
@@ -227,6 +233,7 @@ class EditorActivity : AppCompatActivity() {
             val language = SemanticJavaLanguage(androidJar).apply {
                 fileName = tab.file.name
                 projectClassesDir = this@EditorActivity.projectClassesDir
+                libJars = currentLibJars()
             }
             binding.codeEditor.setEditorLanguage(language)
             runDiagnostics()
@@ -344,7 +351,7 @@ class EditorActivity : AppCompatActivity() {
         val androidJar = androidJarFile ?: return
         val text = binding.codeEditor.text.toString()
         val issues = withContext(Dispatchers.IO) {
-            DiagnosticsEngine.analyze(androidJar, text, activeTab.file.name, projectClassesDir)
+            DiagnosticsEngine.analyze(androidJar, text, activeTab.file.name, projectClassesDir, currentLibJars())
         }
         val container = DiagnosticsContainer()
         container.addDiagnostics(
@@ -404,7 +411,7 @@ class EditorActivity : AppCompatActivity() {
         val androidJar = androidJarFile ?: return
         lifecycleScope.launch {
             val issues = withContext(Dispatchers.IO) {
-                DiagnosticsEngine.analyze(androidJar, binding.codeEditor.text.toString(), activeTab.file.name, projectClassesDir)
+                DiagnosticsEngine.analyze(androidJar, binding.codeEditor.text.toString(), activeTab.file.name, projectClassesDir, currentLibJars())
             }
             val unresolvedNames = issues.mapNotNull { it.unresolvedTypeName }.distinct()
 

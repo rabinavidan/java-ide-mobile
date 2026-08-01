@@ -2,12 +2,15 @@ package com.javaide.mobile.ui
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.lifecycleScope
@@ -17,6 +20,7 @@ import com.javaide.mobile.compiler.AndroidJarProvider
 import com.javaide.mobile.compiler.Dexer
 import com.javaide.mobile.compiler.JavaCompiler
 import com.javaide.mobile.compiler.JavaRunner
+import com.javaide.mobile.compiler.LibJars
 import com.javaide.mobile.compiler.ManifestUtils
 import com.javaide.mobile.compiler.Packager
 import com.javaide.mobile.compiler.ResourceCompiler
@@ -43,6 +47,10 @@ class FileExplorerActivity : AppCompatActivity() {
     private lateinit var adapter: FileAdapter
     private lateinit var currentDir: File
     private lateinit var projectPath: String
+
+    private val addLibraryLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { importLibraryJar(it) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -120,17 +128,18 @@ class FileExplorerActivity : AppCompatActivity() {
             val classesDir = File(projectDir, "build/classes")
             val dexDir = File(projectDir, "build/dex")
             val optimizedDexDir = File(projectDir, "build/dex-opt")
+            val libJars = LibJars.jarsIn(projectDir)
 
             val (success, log) = withContext(Dispatchers.IO) {
                 val runLog = StringBuilder()
 
-                val compileResult = JavaCompiler.compile(projectDir, classesDir, androidJar)
+                val compileResult = JavaCompiler.compile(projectDir, classesDir, androidJar, libJars = libJars)
                 runLog.appendLine("--- compile ---").appendLine(compileResult.log)
                 if (!compileResult.success) {
                     return@withContext false to runLog.toString()
                 }
 
-                val dexResult = Dexer.dex(classesDir, dexDir, androidJar)
+                val dexResult = Dexer.dex(classesDir, dexDir, androidJar, libJars)
                 runLog.appendLine().appendLine("--- dex ---").appendLine(dexResult.log)
                 if (!dexResult.success) {
                     return@withContext false to runLog.toString()
@@ -177,6 +186,7 @@ class FileExplorerActivity : AppCompatActivity() {
             val dexDir = File(projectDir, "build/dex")
             val unsignedApk = File(projectDir, "build/outputs/unsigned.apk")
             val signedApk = File(projectDir, "build/outputs/app-debug.apk")
+            val libJars = LibJars.jarsIn(projectDir)
 
             val (success, log, packageName) = withContext(Dispatchers.IO) {
                 val buildLog = StringBuilder()
@@ -187,13 +197,13 @@ class FileExplorerActivity : AppCompatActivity() {
                     return@withContext Triple(false, buildLog.toString(), null as String?)
                 }
 
-                val compileResult = JavaCompiler.compile(projectDir, classesDir, androidJar, listOf(generatedSourcesDir))
+                val compileResult = JavaCompiler.compile(projectDir, classesDir, androidJar, listOf(generatedSourcesDir), libJars)
                 buildLog.appendLine().appendLine("--- compile ---").appendLine(compileResult.log)
                 if (!compileResult.success) {
                     return@withContext Triple(false, buildLog.toString(), null as String?)
                 }
 
-                val dexResult = Dexer.dex(classesDir, dexDir, androidJar)
+                val dexResult = Dexer.dex(classesDir, dexDir, androidJar, libJars)
                 buildLog.appendLine().appendLine("--- dex ---").appendLine(dexResult.log)
                 if (!dexResult.success) {
                     return@withContext Triple(false, buildLog.toString(), null as String?)
@@ -267,11 +277,61 @@ class FileExplorerActivity : AppCompatActivity() {
                     showNewFolderDialog()
                     true
                 }
+                R.id.action_add_library -> {
+                    addLibraryLauncher.launch(arrayOf("*/*"))
+                    true
+                }
                 else -> false
             }
         }
         popup.show()
     }
+
+    /**
+     * Copies a picked .jar into <project>/libs/, the convention JavaCompiler/Dexer/
+     * DiagnosticsEngine/SemanticCompletionEngine all pick dependency jars up from automatically.
+     * Uses a generic "*/*" MIME filter for the picker since content providers don't reliably
+     * report a specific MIME type for .jar files, validating the extension after the pick instead.
+     */
+    private fun importLibraryJar(uri: Uri) {
+        val displayName = queryDisplayName(uri) ?: "library.jar"
+        if (!displayName.endsWith(".jar")) {
+            Toast.makeText(this, R.string.error_library_not_jar, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val libsDir = File(projectPath, "libs").apply { mkdirs() }
+                    val target = File(libsDir, displayName)
+                    val input = contentResolver.openInputStream(uri) ?: error("Could not open selected file")
+                    input.use { stream -> target.outputStream().use { output -> stream.copyTo(output) } }
+                    target
+                }
+            }
+            result
+                .onSuccess { target ->
+                    Logger.info(this@FileExplorerActivity, "library", "Added library '${target.name}'")
+                    Toast.makeText(
+                        this@FileExplorerActivity,
+                        getString(R.string.msg_library_added, target.name),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    loadEntries()
+                }
+                .onFailure {
+                    Logger.error(this@FileExplorerActivity, "library", "Failed to add library: ${it.message}")
+                    Toast.makeText(this@FileExplorerActivity, R.string.error_library_add_failed, Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
+
+    private fun queryDisplayName(uri: Uri): String? =
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (nameIndex >= 0 && cursor.moveToFirst()) cursor.getString(nameIndex) else null
+        }
 
     private fun showNewFileDialog() {
         val input = EditText(this).apply { hint = getString(R.string.hint_file_name) }

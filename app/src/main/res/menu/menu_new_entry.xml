@@ -6,4 +6,7 @@
     <item
         android:id="@+id/action_new_folder"
         android:title="@string/action_new_folder" />
+    <item
+        android:id="@+id/action_add_library"
+        android:title="@string/action_add_library" />
 </menu>

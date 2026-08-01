@@ -40,11 +40,14 @@ object DiagnosticsEngine {
         androidJar: File,
         fullText: String,
         fileName: String,
-        projectClassesDir: File? = null
+        projectClassesDir: File? = null,
+        libJars: List<File> = emptyList()
     ): List<DiagnosticIssue> {
-        val classpath = listOfNotNull(
-            androidJar.absolutePath,
-            projectClassesDir?.takeIf { it.isDirectory }?.absolutePath
+        val classpath = (
+            listOfNotNull(
+                androidJar.absolutePath,
+                projectClassesDir?.takeIf { it.isDirectory }?.absolutePath
+            ) + libJars.map { it.absolutePath }
         ).toTypedArray()
         val nameEnv = FileSystem(classpath, arrayOf(), "UTF-8")
         val options = CompilerOptions()

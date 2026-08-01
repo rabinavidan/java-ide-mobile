@@ -15,7 +15,14 @@ object Dexer {
 
     private const val MIN_API_LEVEL = 26
 
-    fun dex(classesDir: File, outputDir: File, androidJar: File): DexResult {
+    /**
+     * [libJars]: third-party dependency jars (see [LibJars]). Unlike [androidJar] -- which is
+     * provided by the OS at runtime and only ever used as a library reference -- these need to be
+     * dexed and merged into the app's own output, since nothing else will bundle them. D8's
+     * addProgramFiles already handles a .jar path directly, extracting and dexing its classes
+     * alongside the project's own, the same way a real Android build merges dependency jars in.
+     */
+    fun dex(classesDir: File, outputDir: File, androidJar: File, libJars: List<File> = emptyList()): DexResult {
         val classFiles = classesDir.walkTopDown()
             .filter { it.isFile && it.extension == "class" }
             .map { it.toPath() }
@@ -41,6 +48,7 @@ object Dexer {
         return try {
             val command = D8Command.builder(diagnosticsHandler)
                 .addProgramFiles(classFiles)
+                .addProgramFiles(libJars.map { it.toPath() })
                 .addLibraryFiles(androidJar.toPath())
                 .setOutput(outputDir.toPath(), OutputMode.DexIndexed)
                 .setMinApiLevel(MIN_API_LEVEL)

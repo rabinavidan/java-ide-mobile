@@ -21,6 +21,9 @@ class SemanticJavaLanguage(private val androidJar: File) : JavaLanguage() {
     /** The project's compiled-classes output dir, so cross-file symbols can resolve. Set once known. */
     var projectClassesDir: File? = null
 
+    /** Third-party dependency jars (see LibJars), so completion resolves their APIs too. */
+    var libJars: List<File> = emptyList()
+
     override fun requireAutoComplete(
         content: ContentReference,
         position: CharPosition,
@@ -33,7 +36,7 @@ class SemanticJavaLanguage(private val androidJar: File) : JavaLanguage() {
         val cursor = content.getCharIndex(position.line, position.column)
 
         val result = try {
-            SemanticCompletionEngine.complete(androidJar, text, cursor, fileName, projectClassesDir)
+            SemanticCompletionEngine.complete(androidJar, text, cursor, fileName, projectClassesDir, libJars)
         } catch (e: Exception) {
             null
         } ?: return

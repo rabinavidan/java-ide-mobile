@@ -180,4 +180,9 @@
     <string name="error_file_delete_failed">Failed to delete</string>
     <string name="msg_file_deleted">Deleted</string>
     <string name="msg_class_renamed">Renamed %1$s to %2$s across %3$d file(s)</string>
+
+    <string name="action_add_library">Add library (.jar)</string>
+    <string name="msg_library_added">Added library %1$s</string>
+    <string name="error_library_not_jar">Please choose a .jar file</string>
+    <string name="error_library_add_failed">Failed to add library</string>
 </resources>
