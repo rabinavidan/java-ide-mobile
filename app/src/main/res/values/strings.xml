@@ -119,4 +119,9 @@
     <string name="msg_imports_added">Added %1$d import(s)</string>
     <string name="msg_no_import_fixes">No import fixes needed</string>
     <string name="dialog_choose_import_title">Choose import for \"%1$s\"</string>
+
+    <string name="action_close_tab">Close tab</string>
+    <string name="glyph_close_tab">×</string>
+    <string name="action_open_file">Open another file</string>
+    <string name="glyph_add_tab">+</string>
 </resources>

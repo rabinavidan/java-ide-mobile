@@ -12,6 +12,30 @@
         android:titleTextColor="@android:color/white" />
 
     <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="@color/ide_background"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerTabs"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/buttonOpenFile"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:contentDescription="@string/action_open_file"
+            android:text="@string/glyph_add_tab" />
+
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/layoutSearchBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
