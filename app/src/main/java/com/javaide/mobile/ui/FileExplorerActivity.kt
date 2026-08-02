@@ -84,6 +84,13 @@ class FileExplorerActivity : AppCompatActivity() {
         return true
     }
 
+    /** Refreshes on return in case something changed this directory's contents from elsewhere --
+     * e.g. a package rename in Project Settings moving files this listing shows. */
+    override fun onResume() {
+        super.onResume()
+        loadEntries()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_file_explorer, menu)
         return true
@@ -108,6 +115,12 @@ class FileExplorerActivity : AppCompatActivity() {
             R.id.action_find_in_project -> {
                 val intent = Intent(this, ProjectSearchActivity::class.java)
                 intent.putExtra(ProjectSearchActivity.EXTRA_PROJECT_PATH, projectPath)
+                startActivity(intent)
+                return true
+            }
+            R.id.action_project_settings -> {
+                val intent = Intent(this, ProjectSettingsActivity::class.java)
+                intent.putExtra(ProjectSettingsActivity.EXTRA_PROJECT_PATH, projectPath)
                 startActivity(intent)
                 return true
             }

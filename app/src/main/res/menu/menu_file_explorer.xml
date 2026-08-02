@@ -17,4 +17,8 @@
         android:id="@+id/action_find_in_project"
         android:title="@string/action_find_in_project"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_project_settings"
+        android:title="@string/action_project_settings"
+        app:showAsAction="never" />
 </menu>
