@@ -114,6 +114,10 @@
 
     <string name="title_find_in_project">Find in Project</string>
     <string name="action_find_in_project">Find in project</string>
+    <string name="error_replace_query_required">Search for something first</string>
+    <string name="dialog_replace_all_title">Replace all?</string>
+    <string name="dialog_replace_all_message">Replace every occurrence of \"%1$s\" with \"%2$s\" across %3$d file(s)? This can\'t be undone.</string>
+    <string name="msg_replace_all_done">Replaced in %1$d file(s)</string>
 
     <string name="action_fix_imports">Fix imports</string>
     <string name="msg_imports_added">Added %1$d import(s)</string>

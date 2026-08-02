@@ -33,4 +33,27 @@ object ProjectSearch {
             }
         return matchesByFile.map { (file, matches) -> SearchFileResult(file, matches) }
     }
+
+    /**
+     * Replaces every occurrence of [query] with [replacement] in every file under [projectDir]
+     * that contains it (skipping build/.git), the same substring matching [search] itself uses --
+     * not whole-word, so a query that's part of a larger identifier replaces that part too, same
+     * as [search] would highlight it as a match. Returns how many files were changed.
+     */
+    fun replaceAll(projectDir: File, query: String, replacement: String, caseSensitive: Boolean): Int {
+        if (query.isEmpty()) return 0
+
+        var changedFiles = 0
+        projectDir.walkTopDown()
+            .onEnter { it.name !in SKIP_DIR_NAMES }
+            .filter { it.isFile }
+            .forEach { file ->
+                val text = runCatching { file.readText() }.getOrNull() ?: return@forEach
+                val matched = if (caseSensitive) text.contains(query) else text.contains(query, ignoreCase = true)
+                if (!matched) return@forEach
+                file.writeText(text.replace(query, replacement, ignoreCase = !caseSensitive))
+                changedFiles++
+            }
+        return changedFiles
+    }
 }

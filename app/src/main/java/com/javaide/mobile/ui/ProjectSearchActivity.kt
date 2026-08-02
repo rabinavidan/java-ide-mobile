@@ -5,9 +5,12 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.javaide.mobile.R
 import com.javaide.mobile.databinding.ActivityProjectSearchBinding
 import com.javaide.mobile.util.ProjectSearch
 import com.javaide.mobile.util.SearchMatch
@@ -52,6 +55,7 @@ class ProjectSearchActivity : AppCompatActivity() {
                 false
             }
         }
+        binding.buttonReplaceAll.setOnClickListener { confirmReplaceAll() }
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -70,6 +74,45 @@ class ProjectSearchActivity : AppCompatActivity() {
             }
             adapter.submitResults(projectDir, results)
             binding.textEmptyResults.visibility = if (results.isEmpty()) View.VISIBLE else View.GONE
+        }
+    }
+
+    /**
+     * Re-runs the search fresh (so the confirmation shows an up-to-date file count, in case the
+     * query changed since the last search) before asking to confirm -- this rewrites file
+     * contents across the whole project in one irreversible step, unlike a single-file replace.
+     */
+    private fun confirmReplaceAll() {
+        val query = binding.editSearchQuery.text?.toString().orEmpty()
+        if (query.isEmpty()) {
+            Toast.makeText(this, R.string.error_replace_query_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val replacement = binding.editReplaceWith.text?.toString().orEmpty()
+        val caseSensitive = binding.checkMatchCase.isChecked
+
+        lifecycleScope.launch {
+            val results = withContext(Dispatchers.IO) { ProjectSearch.search(projectDir, query, caseSensitive) }
+            adapter.submitResults(projectDir, results)
+            binding.textEmptyResults.visibility = if (results.isEmpty()) View.VISIBLE else View.GONE
+            if (results.isEmpty()) return@launch
+
+            AlertDialog.Builder(this@ProjectSearchActivity)
+                .setTitle(R.string.dialog_replace_all_title)
+                .setMessage(getString(R.string.dialog_replace_all_message, query, replacement, results.size))
+                .setPositiveButton(R.string.action_replace_all) { _, _ -> performReplaceAll(query, replacement, caseSensitive) }
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .show()
+        }
+    }
+
+    private fun performReplaceAll(query: String, replacement: String, caseSensitive: Boolean) {
+        lifecycleScope.launch {
+            val changedFiles = withContext(Dispatchers.IO) {
+                ProjectSearch.replaceAll(projectDir, query, replacement, caseSensitive)
+            }
+            Toast.makeText(this@ProjectSearchActivity, getString(R.string.msg_replace_all_done, changedFiles), Toast.LENGTH_SHORT).show()
+            runSearch()
         }
     }
 

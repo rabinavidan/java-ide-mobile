@@ -55,6 +55,30 @@
             android:layout_marginStart="8dp"
             android:text="@string/action_match_case" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="8dp">
+
+            <EditText
+                android:id="@+id/editReplaceWith"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="@string/hint_replace"
+                android:inputType="text"
+                android:maxLines="1" />
+
+            <Button
+                android:id="@+id/buttonReplaceAll"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/action_replace_all" />
+        </LinearLayout>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerResults"
             android:layout_width="match_parent"
