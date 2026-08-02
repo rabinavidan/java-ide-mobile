@@ -53,6 +53,70 @@
                 android:inputType="text"
                 android:maxLines="1" />
 
+            <LinearLayout
+                android:id="@+id/sectionSdkAndIcon"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/label_min_sdk"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/editMinSdk"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/label_target_sdk"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/editTargetSdk"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/label_app_icon"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/imageIconPreview"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="@string/label_app_icon"
+                        android:visibility="gone" />
+
+                    <Button
+                        android:id="@+id/buttonChooseIcon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/action_choose_icon" />
+                </LinearLayout>
+
+            </LinearLayout>
+
             <Button
                 android:id="@+id/buttonSave"
                 android:layout_width="wrap_content"

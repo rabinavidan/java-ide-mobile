@@ -207,4 +207,11 @@
     <string name="error_invalid_package_name">Enter a valid package name (e.g. com.example.myapp)</string>
     <string name="msg_project_settings_saved">Project settings saved</string>
     <string name="error_project_settings_save_failed">Failed to save project settings</string>
+    <string name="label_min_sdk">Minimum SDK version</string>
+    <string name="label_target_sdk">Target SDK version</string>
+    <string name="label_app_icon">App icon</string>
+    <string name="action_choose_icon">Choose icon</string>
+    <string name="msg_icon_updated">App icon updated</string>
+    <string name="error_icon_update_failed">Failed to update app icon</string>
+    <string name="error_invalid_sdk_versions">Enter valid SDK versions (target must be ≥ minimum)</string>
 </resources>

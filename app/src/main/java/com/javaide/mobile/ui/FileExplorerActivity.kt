@@ -216,7 +216,8 @@ class FileExplorerActivity : AppCompatActivity() {
                     return@withContext Triple(false, buildLog.toString(), null as String?)
                 }
 
-                val dexResult = Dexer.dex(classesDir, dexDir, androidJar, libJars)
+                val minSdk = ManifestUtils.readMinSdkVersion(manifestFile) ?: Dexer.DEFAULT_MIN_API_LEVEL
+                val dexResult = Dexer.dex(classesDir, dexDir, androidJar, libJars, minSdk)
                 buildLog.appendLine().appendLine("--- dex ---").appendLine(dexResult.log)
                 if (!dexResult.success) {
                     return@withContext Triple(false, buildLog.toString(), null as String?)

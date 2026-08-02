@@ -9,19 +9,29 @@ import javax.xml.parsers.DocumentBuilderFactory
 data class ResourceCompileResult(val success: Boolean, val log: String, val apkModule: ApkModule? = null)
 
 /**
- * Compiles a project's AndroidManifest.xml and simple resources (strings, layouts) into a
- * binary ApkModule using ARSCLib, and generates the matching R.java.
+ * Compiles a project's AndroidManifest.xml and simple resources (strings, layouts, an optional
+ * app icon) into a binary ApkModule using ARSCLib, and generates the matching R.java.
  *
- * This only supports what the generated project template uses: a single unqualified
- * res/values/strings.xml and res/layout/*.xml files. Styles, drawables, qualifiers, etc.
+ * This only supports what the generated project template (plus Project Settings' icon picker)
+ * uses: a single unqualified res/values/strings.xml, res/layout/*.xml files, and at most one
+ * non-density-qualified res/mipmap/ic_launcher.png. Styles, qualifiers, adaptive icons, etc.
  * are not handled yet.
  */
 object ResourceCompiler {
 
+    /** Conventional, fixed location/name Project Settings' icon picker (IconUtils) saves to --
+     * there's only ever one app icon per project, so no id/name needs to be user-chosen. */
+    const val ICON_RESOURCE_NAME = "ic_launcher"
+
     private const val STRING_ID_BASE = 0x7f010000
     private const val LAYOUT_ID_BASE = 0x7f020000
+    private const val MIPMAP_ID_BASE = 0x7f030000
 
-    private data class ResourceIds(val strings: Map<String, Int>, val layouts: Map<String, Int>)
+    private data class ResourceIds(
+        val strings: Map<String, Int>,
+        val layouts: Map<String, Int>,
+        val mipmaps: Map<String, Int>
+    )
 
     fun compile(projectDir: File, androidJar: File, generatedSourcesDir: File): ResourceCompileResult {
         val mainDir = File(projectDir, "src/main")
@@ -36,10 +46,12 @@ object ResourceCompiler {
             val stringNames = readStringNames(stringsFile)
             val layoutFiles = File(mainDir, "res/layout").listFiles { f -> f.isFile && f.extension == "xml" }
                 ?.sortedBy { it.name }.orEmpty()
+            val iconFile = File(mainDir, "res/mipmap/$ICON_RESOURCE_NAME.png").takeIf { it.isFile }
 
             val ids = ResourceIds(
                 strings = stringNames.withIndex().associate { (i, name) -> name to (STRING_ID_BASE + i) },
-                layouts = layoutFiles.withIndex().associate { (i, f) -> f.nameWithoutExtension to (LAYOUT_ID_BASE + i) }
+                layouts = layoutFiles.withIndex().associate { (i, f) -> f.nameWithoutExtension to (LAYOUT_ID_BASE + i) },
+                mipmaps = if (iconFile != null) mapOf(ICON_RESOURCE_NAME to MIPMAP_ID_BASE) else emptyMap()
             )
 
             writeRJava(generatedSourcesDir, packageName, ids)
@@ -60,6 +72,11 @@ object ResourceCompiler {
             if (layoutFiles.isNotEmpty()) {
                 val layoutDir = File(resDir, "layout").apply { mkdirs() }
                 layoutFiles.forEach { it.copyTo(File(layoutDir, it.name), overwrite = true) }
+            }
+
+            if (iconFile != null) {
+                val mipmapDir = File(resDir, "mipmap").apply { mkdirs() }
+                iconFile.copyTo(File(mipmapDir, iconFile.name), overwrite = true)
             }
 
             val encoder = ApkModuleXmlEncoder()
@@ -90,6 +107,9 @@ object ResourceCompiler {
             ids.layouts.forEach { (name, id) ->
                 appendLine("""    <public type="layout" name="$name" id="0x${id.toString(16)}" />""")
             }
+            ids.mipmaps.forEach { (name, id) ->
+                appendLine("""    <public type="mipmap" name="$name" id="0x${id.toString(16)}" />""")
+            }
             appendLine("</resources>")
         }
         file.writeText(text)
@@ -106,6 +126,9 @@ object ResourceCompiler {
             appendLine("    }")
             appendLine("    public static final class layout {")
             ids.layouts.forEach { (name, id) -> appendLine("        public static final int $name = 0x${id.toString(16)};") }
+            appendLine("    }")
+            appendLine("    public static final class mipmap {")
+            ids.mipmaps.forEach { (name, id) -> appendLine("        public static final int $name = 0x${id.toString(16)};") }
             appendLine("    }")
             appendLine("}")
         }
