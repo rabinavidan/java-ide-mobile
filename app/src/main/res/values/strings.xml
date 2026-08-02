@@ -198,4 +198,13 @@
     <string name="action_refresh">Refresh</string>
     <string name="msg_logcat_no_process">No running process found for this app. Make sure it\'s still open, then tap Refresh.\n\nNote: Android only lets an app read its own log output since Android 4.1, unless the device is rooted or a development build (most emulators). On a locked-down device this may never show anything -- that\'s a platform restriction, not a bug here.</string>
     <string name="msg_logcat_empty">The app is running, but hasn\'t logged anything yet.</string>
+
+    <string name="action_project_settings">Project settings</string>
+    <string name="title_project_settings">Project Settings</string>
+    <string name="label_app_name">App name</string>
+    <string name="label_package_name">Package name</string>
+    <string name="hint_package_name">e.g. com.example.myapp</string>
+    <string name="error_invalid_package_name">Enter a valid package name (e.g. com.example.myapp)</string>
+    <string name="msg_project_settings_saved">Project settings saved</string>
+    <string name="error_project_settings_save_failed">Failed to save project settings</string>
 </resources>
