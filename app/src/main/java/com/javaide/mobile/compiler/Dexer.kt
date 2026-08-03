@@ -13,7 +13,8 @@ data class DexResult(val success: Boolean, val log: String)
 /** Converts .class files produced by [JavaCompiler] into classes.dex using D8. */
 object Dexer {
 
-    private const val MIN_API_LEVEL = 26
+    /** Fallback when a project has no manifest to read a minSdk from (e.g. a Java-console project). */
+    const val DEFAULT_MIN_API_LEVEL = 26
 
     /**
      * [libJars]: third-party dependency jars (see [LibJars]). Unlike [androidJar] -- which is
@@ -21,8 +22,18 @@ object Dexer {
      * dexed and merged into the app's own output, since nothing else will bundle them. D8's
      * addProgramFiles already handles a .jar path directly, extracting and dexing its classes
      * alongside the project's own, the same way a real Android build merges dependency jars in.
+     *
+     * [minApiLevel]: the project's manifest minSdkVersion (see ManifestUtils.readMinSdkVersion),
+     * or [DEFAULT_MIN_API_LEVEL] if it has none. D8 itself rejects a nonsensical value through the
+     * usual [DexResult] failure log, so this doesn't pre-validate it.
      */
-    fun dex(classesDir: File, outputDir: File, androidJar: File, libJars: List<File> = emptyList()): DexResult {
+    fun dex(
+        classesDir: File,
+        outputDir: File,
+        androidJar: File,
+        libJars: List<File> = emptyList(),
+        minApiLevel: Int = DEFAULT_MIN_API_LEVEL
+    ): DexResult {
         val classFiles = classesDir.walkTopDown()
             .filter { it.isFile && it.extension == "class" }
             .map { it.toPath() }
@@ -51,7 +62,7 @@ object Dexer {
                 .addProgramFiles(libJars.map { it.toPath() })
                 .addLibraryFiles(androidJar.toPath())
                 .setOutput(outputDir.toPath(), OutputMode.DexIndexed)
-                .setMinApiLevel(MIN_API_LEVEL)
+                .setMinApiLevel(minApiLevel)
                 .build()
             D8.run(command)
             DexResult(success = true, log = messages.toString().ifBlank { "Dexing succeeded." })
