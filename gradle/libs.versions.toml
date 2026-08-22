@@ -40,6 +40,7 @@ apksig = { group = "com.android.tools.build", name = "apksig", version.ref = "ap
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+espresso-intents = { group = "androidx.test.espresso", name = "espresso-intents", version.ref = "espressoCore" }
 allure-junit4 = { group = "io.qameta.allure", name = "allure-junit4", version.ref = "allure" }
 allure-junit4-aspect = { group = "io.qameta.allure", name = "allure-junit4-aspect", version.ref = "allure" }
 allure-commandline = { group = "io.qameta.allure", name = "allure-commandline", version.ref = "allure" }

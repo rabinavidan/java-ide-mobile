@@ -151,6 +151,7 @@ dependencies {
     testImplementation(libs.allure.junit4.aspect)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.espresso.intents)
 
     aspectjWeaver(libs.aspectjweaver)
     allureCli(libs.allure.commandline) {
