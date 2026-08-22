@@ -4,6 +4,7 @@ import android.content.Context
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.MergeResult
 import org.eclipse.jgit.api.ResetCommand
+import org.eclipse.jgit.lib.BranchConfig
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -140,6 +141,9 @@ object GitRepository {
     fun pull(projectDir: File, credentials: GitCredentials?): GitOperationResult = runCatching {
         Git.open(projectDir).use { git ->
             val command = git.pull()
+                // Force merge mode — never rebase. Rebase leaves mergeResult null, which
+                // makes conflict detection impossible without parsing rebaseResult instead.
+                .setRebase(BranchConfig.BranchRebaseMode.NONE)
             credentials?.let { command.setCredentialsProvider(UsernamePasswordCredentialsProvider(it.username, it.token)) }
             command.call()
         }

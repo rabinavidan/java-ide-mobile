@@ -147,8 +147,8 @@ class GitRepositoryTest {
 
         val pullResult = GitRepository.pull(localDir, credentials = null)
 
-        assertFalse(pullResult.success)
-        assertTrue(pullResult.message.contains("shared.txt"))
+        assertFalse("pull should fail: ${pullResult.message}", pullResult.success)
+        assertTrue("message should name the file; actual: '${pullResult.message}'", pullResult.message.contains("shared.txt"))
         val status = GitRepository.status(localDir).getOrThrow()
         assertTrue(status.conflicting.contains("shared.txt"))
         val content = File(localDir, "shared.txt").readText()
@@ -195,7 +195,9 @@ class GitRepositoryTest {
         }
 
         val localDir = File(tempFolder.root, "Local")
-        Git.cloneRepository().setURI(remoteDir.absolutePath).setDirectory(localDir).call().close()
+        // Use file:// URI so JGit can parse the remote URL correctly on all platforms
+        // (raw Windows paths like C:\... are not valid git remote URLs for fetching).
+        Git.cloneRepository().setURI(remoteDir.toURI().toString()).setDirectory(localDir).call().close()
 
         Git.open(remoteDir).use { git ->
             File(remoteDir, "shared.txt").writeText("remote-change\n")
