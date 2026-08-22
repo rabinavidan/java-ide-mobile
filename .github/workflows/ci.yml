@@ -38,6 +38,7 @@ jobs:
     name: Instrumented tests (API ${{ matrix.api-level }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         api-level: [29, 33]
     steps:
@@ -57,18 +58,39 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # Build the test APK first so emulator boot time isn't counted against the test timeout
+      - name: Build debug and test APKs
+        run: ./gradlew packageDebug packageDebugAndroidTest
+
       - name: Run instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
           arch: x86_64
+          target: google_apis
           profile: pixel_6
-          script: ./gradlew connectedDebugAndroidTest
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          ram-size: 4096M
+          heap-size: 1024M
+          disk-size: 8192M
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 4096
+          # Grant storage permissions before running so ProjectStorageTest can write to external dir.
+          # READ_EXTERNAL_STORAGE is auto-granted on API 29+; WRITE is only needed up to API 32.
+          script: |
+            adb wait-for-device
+            adb shell settings put global window_animation_scale 0
+            adb shell settings put global transition_animation_scale 0
+            adb shell settings put global animator_duration_scale 0
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            if [ "${{ matrix.api-level }}" -le 32 ]; then
+              adb shell pm grant com.javaide.mobile android.permission.WRITE_EXTERNAL_STORAGE || true
+              adb shell pm grant com.javaide.mobile android.permission.READ_EXTERNAL_STORAGE || true
+            fi
+            ./gradlew connectedDebugAndroidTest
 
       - name: Upload instrumented test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: instrumented-test-results-api${{ matrix.api-level }}
-          path: app/build/reports/androidTests/
+          path: app/build/reports/androidTests/connected/
