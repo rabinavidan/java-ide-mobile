@@ -25,6 +25,7 @@ import com.javaide.mobile.completion.ImportInserter
 import com.javaide.mobile.completion.SemanticJavaLanguage
 import com.javaide.mobile.data.AppDatabase
 import com.javaide.mobile.data.EditorState
+import com.javaide.mobile.data.Logger
 import com.javaide.mobile.databinding.ActivityEditorBinding
 import com.javaide.mobile.util.ClassRenamer
 import io.github.rosemoe.sora.event.ContentChangeEvent
@@ -181,6 +182,7 @@ class EditorActivity : AppCompatActivity() {
             val file = File(filePath)
             tabs.add(EditorTab(file = file, text = file.readText()))
             switchToTab(tabs.size - 1)
+            Logger.info(this, "editor", "Opened: ${file.name}")
             true
         }
     }
@@ -198,6 +200,7 @@ class EditorActivity : AppCompatActivity() {
     private fun closeTab(index: Int) {
         val wasActive = index == activeTabIndex
         if (wasActive) flushActiveTab()
+        Logger.info(this, "editor", "Closed: ${tabs[index].file.name}")
         tabs.removeAt(index)
         if (tabs.isEmpty()) {
             finish()
@@ -527,7 +530,10 @@ class EditorActivity : AppCompatActivity() {
     /** Writes a tab's already-captured state to disk + Room. Safe to call after switching away. */
     private suspend fun persistTabToDisk(tab: EditorTab) {
         withContext(Dispatchers.IO) {
-            runCatching { tab.file.writeText(tab.text) }
+            runCatching {
+                tab.file.writeText(tab.text)
+                Logger.info(this@EditorActivity, "editor", "Saved: ${tab.file.name}")
+            }
             runCatching {
                 AppDatabase.get(this@EditorActivity).dao().upsertEditorState(
                     EditorState(
