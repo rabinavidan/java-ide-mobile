@@ -31,7 +31,7 @@ class SemanticCompletionEngineTest {
         val javaDir = File(projectDir, "src/main/java").apply { mkdirs() }
         File(javaDir, "Helper.java").writeText(
             "public class Helper {\n" +
-                "    public int computeScore(String s) { return s.length(); }\n" +
+                "    public int computeScore(String s) { return s.length; }\n" +
                 "}\n"
         )
         val classesDir = File(projectDir, "classes")
@@ -48,7 +48,7 @@ class SemanticCompletionEngineTest {
         """.trimMargin()
         // Cursor right after "comp", mid-typing "h.comp" -- there's no earlier "comp" in this
         // source, but lastIndexOf mirrors how a real caret position is computed either way.
-        val cursor = source.lastIndexOf("comp") + "comp".length()
+        val cursor = source.lastIndexOf("comp") + "comp".length
 
         val result = SemanticCompletionEngine.complete(androidJar, source, cursor, "Foo.java", classesDir)
 
@@ -72,7 +72,7 @@ class SemanticCompletionEngineTest {
         """.trimMargin()
         // lastIndexOf, not indexOf: "myLocalVariable"'s own declaration also starts with "myLo",
         // so a plain indexOf would find the declaration site instead of the completion trigger.
-        val cursor = source.lastIndexOf("myLo") + "myLo".length()
+        val cursor = source.lastIndexOf("myLo") + "myLo".length
 
         val result = SemanticCompletionEngine.complete(androidJar, source, cursor, "Foo.java")
 
@@ -92,7 +92,7 @@ class SemanticCompletionEngineTest {
             |    }
             |}
         """.trimMargin()
-        val cursor = source.indexOf("int x = 5;") + "int x = 5;".length() + 1
+        val cursor = source.indexOf("int x = 5;") + "int x = 5;".length + 1
 
         val result = SemanticCompletionEngine.complete(androidJar, source, cursor, "Foo.java")
 
@@ -112,7 +112,7 @@ class SemanticCompletionEngineTest {
             |    }
             |}
         """.trimMargin()
-        val cursor = source.lastIndexOf("va") + "va".length()
+        val cursor = source.lastIndexOf("va") + "va".length
 
         val result = SemanticCompletionEngine.complete(
             androidJar, source, cursor, "Foo.java", libJars = listOf(libJar)
