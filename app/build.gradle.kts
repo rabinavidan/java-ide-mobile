@@ -43,7 +43,7 @@ android {
 
     packaging {
         resources {
-            excludes += setOf("META-INF/LICENSE*", "META-INF/NOTICE*", "module-info.class")
+            excludes += setOf("META-INF/LICENSE*", "META-INF/NOTICE*", "module-info.class", "META-INF/versions/9/OSGI-INF/MANIFEST.MF")
         }
     }
 

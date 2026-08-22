@@ -98,7 +98,7 @@ class EditorActivity : AppCompatActivity() {
             scheduleDiagnostics()
         }
         binding.codeEditor.subscribeEvent(PublishSearchResultEvent::class.java) { event, _ ->
-            updateMatchCountLabel(event.searcher)
+            updateMatchCountLabel(event.getSearcher())
         }
 
         setUpSearchBar()

@@ -304,7 +304,7 @@ class FileExplorerActivity : AppCompatActivity() {
     /**
      * Copies a picked .jar into <project>/libs/, the convention JavaCompiler/Dexer/
      * DiagnosticsEngine/SemanticCompletionEngine all pick dependency jars up from automatically.
-     * Uses a generic "*/*" MIME filter for the picker since content providers don't reliably
+     * Uses a generic star/star MIME filter for the picker since content providers don't reliably
      * report a specific MIME type for .jar files, validating the extension after the pick instead.
      */
     private fun importLibraryJar(uri: Uri) {
