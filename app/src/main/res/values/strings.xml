@@ -33,6 +33,8 @@
     <string name="action_run">Run</string>
     <string name="running">Running</string>
     <string name="running_message">Compiling and running…</string>
+    <string name="console_title">Console</string>
+    <string name="action_close_console">Close console</string>
     <string name="title_run_output">Run output</string>
     <string name="run_succeeded">Run finished</string>
     <string name="run_failed">Run failed</string>
