@@ -133,7 +133,7 @@ object SemanticCompletionEngine {
             }
 
             SemanticCompletionResult(prefixLength, out.values.toList())
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             SemanticCompletionResult(prefixLength, emptyList())
         } finally {
             nameEnv.cleanup()

@@ -47,7 +47,7 @@ class FileExplorerActivity : AppCompatActivity() {
     private lateinit var adapter: FileAdapter
     private lateinit var currentDir: File
     private lateinit var projectPath: String
-    private var isFlatMode = false
+    private var isFlatMode = true
 
     private val addLibraryLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { importLibraryJar(it) }

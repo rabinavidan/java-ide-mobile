@@ -84,7 +84,7 @@ object DiagnosticsEngine {
                         }
                     )
                 }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             emptyList()
         } finally {
             nameEnv.cleanup()

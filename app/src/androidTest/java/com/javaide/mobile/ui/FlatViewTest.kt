@@ -56,10 +56,7 @@ class FlatViewTest {
     @Test
     fun flatViewShowsNestedFilesWithRelativePaths() {
         launchAtRoot().use {
-            openActionBarOverflowOrOptionsMenu(InstrumentationRegistry.getInstrumentation().targetContext)
-            onView(withText("Flat view")).perform(click())
-
-            // Both deeply nested files should be visible as relative paths — no drilling needed
+            // Flat view is the default — files are visible immediately, no toggle needed
             onView(withText("src/main/java/com/example/Main.java")).check(matches(isDisplayed()))
             onView(withText("src/main/java/com/example/Helper.java")).check(matches(isDisplayed()))
         }
@@ -70,9 +67,6 @@ class FlatViewTest {
         launchAtRoot().use {
             Intents.intending(hasComponent(EditorActivity::class.java.name))
                 .respondWith(android.app.Instrumentation.ActivityResult(0, null))
-
-            openActionBarOverflowOrOptionsMenu(InstrumentationRegistry.getInstrumentation().targetContext)
-            onView(withText("Flat view")).perform(click())
 
             onView(withText("src/main/java/com/example/Main.java")).perform(click())
 
@@ -86,15 +80,11 @@ class FlatViewTest {
     }
 
     @Test
-    fun switchingBackToTreeViewRestoresDirectoryListing() {
+    fun switchingToTreeViewRestoresDirectoryListing() {
         launchAtRoot().use {
             val ctx = InstrumentationRegistry.getInstrumentation().targetContext
 
-            // Switch to flat view
-            openActionBarOverflowOrOptionsMenu(ctx)
-            onView(withText("Flat view")).perform(click())
-
-            // Switch back to tree view
+            // Default is flat — switch to tree view
             openActionBarOverflowOrOptionsMenu(ctx)
             onView(withText("Tree view")).perform(click())
 
