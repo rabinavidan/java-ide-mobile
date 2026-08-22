@@ -45,12 +45,17 @@ object JavaCompiler {
 
         // systemExitWhenFinished must be false: the default calls System.exit() on
         // failure, which would kill the host app instead of just failing the build.
-        val compiler = Main(PrintWriter(outWriter), PrintWriter(errWriter), false, null, null)
-        val success = compiler.compile(args)
-
-        val log = (outWriter.toString() + errWriter.toString())
-            .ifBlank { if (success) "Compilation succeeded." else "Compilation failed." }
-
-        return CompileResult(success = success, log = log)
+        // Wrapped in try/catch(Throwable): ECJ's FileSystem static initializer references
+        // javax.lang.model.SourceVersion which doesn't exist on Android, causing
+        // NoClassDefFoundError at class-load time (an Error, not an Exception).
+        return try {
+            val compiler = Main(PrintWriter(outWriter), PrintWriter(errWriter), false, null, null)
+            val success = compiler.compile(args)
+            val log = (outWriter.toString() + errWriter.toString())
+                .ifBlank { if (success) "Compilation succeeded." else "Compilation failed." }
+            CompileResult(success = success, log = log)
+        } catch (e: Throwable) {
+            CompileResult(success = false, log = "Compiler error: ${e.message ?: e.javaClass.simpleName}")
+        }
     }
 }
