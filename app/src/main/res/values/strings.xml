@@ -214,4 +214,7 @@
     <string name="msg_icon_updated">App icon updated</string>
     <string name="error_icon_update_failed">Failed to update app icon</string>
     <string name="error_invalid_sdk_versions">Enter valid SDK versions (target must be ≥ minimum)</string>
+    <string name="action_flat_view">Flat view</string>
+    <string name="action_tree_view">Tree view</string>
+    <string name="empty_flat_files_message">No source files found in this project.</string>
 </resources>

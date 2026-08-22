@@ -10,6 +10,10 @@
         android:title="@string/action_build"
         app:showAsAction="always" />
     <item
+        android:id="@+id/action_toggle_flat_view"
+        android:title="@string/action_flat_view"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_version_control"
         android:title="@string/action_version_control"
         app:showAsAction="never" />

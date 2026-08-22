@@ -17,6 +17,9 @@ class FileAdapter(
 
     private val entries = mutableListOf<File>()
 
+    /** When set, file names are shown as paths relative to this root. */
+    var flatModeRoot: File? = null
+
     fun submitList(newEntries: List<File>) {
         entries.clear()
         entries.addAll(newEntries)
@@ -38,12 +41,19 @@ class FileAdapter(
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(entry: File) {
-            binding.textFileName.text = entry.name
+            val root = flatModeRoot
+            binding.textFileName.text = if (root != null) {
+                entry.relativeTo(root).path
+            } else {
+                entry.name
+            }
             binding.iconFileType.setImageResource(
                 if (entry.isDirectory) android.R.drawable.ic_menu_agenda
                 else android.R.drawable.ic_menu_edit
             )
             binding.root.setOnClickListener { onFileClick(entry) }
+            // Hide overflow menu in flat mode — rename/delete by path is confusing
+            binding.buttonFileMenu.visibility = if (root != null) View.GONE else View.VISIBLE
             binding.buttonFileMenu.setOnClickListener { showMenu(it, entry) }
         }
 

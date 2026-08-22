@@ -47,6 +47,7 @@ class FileExplorerActivity : AppCompatActivity() {
     private lateinit var adapter: FileAdapter
     private lateinit var currentDir: File
     private lateinit var projectPath: String
+    private var isFlatMode = false
 
     private val addLibraryLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { importLibraryJar(it) }
@@ -93,11 +94,23 @@ class FileExplorerActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_file_explorer, menu)
+        updateFlatViewMenuItem(menu)
         return true
+    }
+
+    private fun updateFlatViewMenuItem(menu: Menu) {
+        menu.findItem(R.id.action_toggle_flat_view)?.title =
+            getString(if (isFlatMode) R.string.action_tree_view else R.string.action_flat_view)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.action_toggle_flat_view -> {
+                isFlatMode = !isFlatMode
+                invalidateOptionsMenu()
+                loadEntries()
+                return true
+            }
             R.id.action_build -> {
                 runBuild()
                 return true
@@ -256,11 +269,25 @@ class FileExplorerActivity : AppCompatActivity() {
     }
 
     private fun loadEntries() {
-        val entries = currentDir.listFiles()
-            ?.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
-            ?: emptyList()
-        adapter.submitList(entries)
-        binding.textEmptyFiles.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
+        if (isFlatMode) {
+            val projectRoot = File(projectPath)
+            val files = projectRoot.walkTopDown()
+                .filter { it.isFile }
+                .sortedBy { it.relativeTo(projectRoot).path.lowercase() }
+                .toList()
+            adapter.flatModeRoot = projectRoot
+            adapter.submitList(files)
+            binding.textEmptyFiles.visibility = if (files.isEmpty()) View.VISIBLE else View.GONE
+            binding.textEmptyFiles.setText(R.string.empty_flat_files_message)
+        } else {
+            val entries = currentDir.listFiles()
+                ?.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
+                ?: emptyList()
+            adapter.flatModeRoot = null
+            adapter.submitList(entries)
+            binding.textEmptyFiles.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
+            binding.textEmptyFiles.setText(R.string.empty_files_message)
+        }
     }
 
     private fun onEntryClick(entry: File) {
