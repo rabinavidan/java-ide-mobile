@@ -31,7 +31,7 @@ class SemanticCompletionEngineTest {
         val javaDir = File(projectDir, "src/main/java").apply { mkdirs() }
         File(javaDir, "Helper.java").writeText(
             "public class Helper {\n" +
-                "    public int computeScore(String s) { return s.length; }\n" +
+                "    public int computeScore(String s) { return s.length(); }\n" +
                 "}\n"
         )
         val classesDir = File(projectDir, "classes")
