@@ -9,6 +9,11 @@ plugins {
 // module is already compiled against (android.bootClasspath) into assets at build time.
 val androidJarAssetDir = layout.buildDirectory.dir("generated/androidJarAsset")
 
+val gitHash: Provider<String> = providers.exec {
+    commandLine("git", "rev-parse", "--short", "HEAD")
+    workingDir(rootDir)
+}.standardOutput.asText.map { it.trim() }
+
 android {
     namespace = "com.javaide.mobile"
     compileSdk = 34
@@ -19,6 +24,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("String", "GIT_HASH", "\"${gitHash.get()}\"")
     }
 
     buildTypes {
@@ -39,6 +45,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 
     packaging {

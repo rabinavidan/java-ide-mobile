@@ -272,6 +272,7 @@ class FileExplorerActivity : AppCompatActivity() {
             startActivity(intent)
         } else {
             val intent = Intent(this, EditorActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
             intent.putExtra(EditorActivity.EXTRA_FILE_PATH, entry.absolutePath)
             intent.putExtra(EditorActivity.EXTRA_PROJECT_PATH, projectPath)
             startActivity(intent)
