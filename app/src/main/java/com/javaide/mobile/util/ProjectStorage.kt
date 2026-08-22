@@ -11,7 +11,9 @@ object ProjectStorage {
     private val NAME_PATTERN = Regex("^[A-Za-z][A-Za-z0-9_]*$")
 
     fun projectsRoot(context: Context): File =
-        File(context.filesDir, PROJECTS_DIR).apply { mkdirs() }
+        (context.getExternalFilesDir(null) ?: context.filesDir)
+            .let { File(it, PROJECTS_DIR) }
+            .apply { mkdirs() }
 
     fun listProjects(context: Context): List<File> =
         projectsRoot(context).listFiles { file -> file.isDirectory }
