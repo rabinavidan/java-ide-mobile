@@ -13,7 +13,7 @@ data class ResourceCompileResult(val success: Boolean, val log: String, val apkM
  * app icon) into a binary ApkModule using ARSCLib, and generates the matching R.java.
  *
  * This only supports what the generated project template (plus Project Settings' icon picker)
- * uses: a single unqualified res/values/strings.xml, res/layout/*.xml files, and at most one
+ * uses: a single unqualified res/values/strings.xml, res/layout/ XML files, and at most one
  * non-density-qualified res/mipmap/ic_launcher.png. Styles, qualifiers, adaptive icons, etc.
  * are not handled yet.
  */
