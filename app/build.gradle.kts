@@ -22,8 +22,8 @@ android {
         applicationId = "com.javaide.mobile"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "0.2.3"
+        versionCode = 7
+        versionName = "0.2.4"
         buildConfigField("String", "GIT_HASH", "\"${gitHash.get()}\"")
     }
 

@@ -105,6 +105,7 @@ class EditorActivity : AppCompatActivity() {
 
         setUpSearchBar()
         setUpAccessoryBar()
+        setUpConsole()
 
         handleIntent(intent)
     }
@@ -269,6 +270,12 @@ class EditorActivity : AppCompatActivity() {
         binding.buttonMoveDown.setOnClickListener { binding.codeEditor.moveSelection(SelectionMovement.DOWN) }
     }
 
+    private fun setUpConsole() {
+        binding.buttonCloseConsole.setOnClickListener {
+            binding.layoutConsole.visibility = View.GONE
+        }
+    }
+
     private fun setUpSearchBar() {
         binding.editSearchQuery.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -419,16 +426,19 @@ class EditorActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
+    private fun showConsole(text: String) {
+        binding.textConsoleOutput.text = text
+        binding.layoutConsole.visibility = View.VISIBLE
+        binding.scrollConsole.post { binding.scrollConsole.fullScroll(View.FOCUS_DOWN) }
+    }
+
     private fun runProject() {
         val projectPath = currentProjectPath ?: run {
             Toast.makeText(this, "No project associated with this file", Toast.LENGTH_SHORT).show()
             return
         }
-        val progressDialog = AlertDialog.Builder(this)
-            .setTitle(R.string.running)
-            .setMessage(R.string.running_message)
-            .setCancelable(false)
-            .show()
+
+        showConsole(getString(R.string.running_message))
 
         lifecycleScope.launch {
             val androidJar = AndroidJarProvider.get(this@EditorActivity)
@@ -453,19 +463,11 @@ class EditorActivity : AppCompatActivity() {
                 runResult.success to runLog.toString()
             }
 
-            progressDialog.dismiss()
-
             val projectName = File(projectPath).name
             if (success) Logger.info(this@EditorActivity, "run", "Run succeeded for '$projectName'")
             else Logger.warn(this@EditorActivity, "run", "Run failed for '$projectName'")
 
-            val intent = Intent(this@EditorActivity, BuildOutputActivity::class.java)
-            intent.putExtra(BuildOutputActivity.EXTRA_SUCCESS, success)
-            intent.putExtra(BuildOutputActivity.EXTRA_LOG, log)
-            intent.putExtra(BuildOutputActivity.EXTRA_TITLE_RES, R.string.title_run_output)
-            intent.putExtra(BuildOutputActivity.EXTRA_SUCCESS_TEXT_RES, R.string.run_succeeded)
-            intent.putExtra(BuildOutputActivity.EXTRA_FAILURE_TEXT_RES, R.string.run_failed)
-            startActivity(intent)
+            showConsole(log)
         }
     }
 
