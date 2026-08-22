@@ -67,12 +67,11 @@ jobs:
         with:
           api-level: ${{ matrix.api-level }}
           arch: x86_64
-          target: google_apis
+          target: default
           profile: pixel_6
-          ram-size: 4096M
-          heap-size: 1024M
-          disk-size: 8192M
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 4096
+          ram-size: 2048M
+          heap-size: 512M
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           # Grant storage permissions before running so ProjectStorageTest can write to external dir.
           # READ_EXTERNAL_STORAGE is auto-granted on API 29+; WRITE is only needed up to API 32.
           script: |
