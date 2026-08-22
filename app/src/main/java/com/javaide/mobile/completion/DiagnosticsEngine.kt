@@ -49,7 +49,11 @@ object DiagnosticsEngine {
                 projectClassesDir?.takeIf { it.isDirectory }?.absolutePath
             ) + libJars.map { it.absolutePath }
         ).toTypedArray()
-        val nameEnv = FileSystem(classpath, arrayOf(), "UTF-8")
+        val nameEnv = try {
+            FileSystem(classpath, arrayOf(), "UTF-8")
+        } catch (e: Throwable) {
+            return emptyList()
+        }
         val options = CompilerOptions()
         options.complianceLevel = ClassFileConstants.JDK1_8
         options.sourceLevel = ClassFileConstants.JDK1_8
