@@ -73,19 +73,8 @@ jobs:
           heap-size: 512M
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           # Grant storage permissions before running so ProjectStorageTest can write to external dir.
-          # READ_EXTERNAL_STORAGE is auto-granted on API 29+; WRITE is only needed up to API 32.
-          script: |
-            adb wait-for-device
-            adb shell settings put global window_animation_scale 0
-            adb shell settings put global transition_animation_scale 0
-            adb shell settings put global animator_duration_scale 0
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-            if [ "${{ matrix.api-level }}" -le 32 ]; then
-              adb shell pm grant com.javaide.mobile android.permission.WRITE_EXTERNAL_STORAGE || true
-              adb shell pm grant com.javaide.mobile android.permission.READ_EXTERNAL_STORAGE || true
-            fi
-            ./gradlew connectedDebugAndroidTest
+          # WRITE_EXTERNAL_STORAGE is only applicable on API <= 32; pm grant ignores it on 33+.
+          script: ./ci/run-instrumented-tests.sh ${{ matrix.api-level }}
 
       - name: Upload instrumented test results
         if: always()
