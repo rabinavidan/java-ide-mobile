@@ -14,3 +14,18 @@
 /app/build
 /app/release
 /build
+
+# Images — block loose image files outside app resources (screenshots, docs, etc.)
+# App drawable/mipmap PNGs inside src/main/res/ are still tracked.
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.tiff
+*.tif
+*.heic
+*.heif
+*.png
+!app/src/main/res/**/*.png
+!app/src/*/res/**/*.png
