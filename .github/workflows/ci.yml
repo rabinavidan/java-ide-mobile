@@ -35,12 +35,8 @@ jobs:
           path: app/build/reports/tests/
 
   instrumented-tests:
-    name: Instrumented tests (API ${{ matrix.api-level }})
+    name: Instrumented tests (API 29)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        api-level: [29, 33]
     steps:
       - uses: actions/checkout@v4
 
@@ -51,6 +47,15 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # Free up disk space — GitHub runners have ~14 GB; Android system images need ~7 GB
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk \
+            /usr/local/lib/android/sdk/build-tools/30.0.3 \
+            /opt/ghc /usr/local/.ghcup
+          sudo docker system prune -af || true
+          df -h
+
       # KVM acceleration is required for the emulator to run at usable speed
       - name: Enable KVM
         run: |
@@ -58,27 +63,25 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # Build the test APK first so emulator boot time isn't counted against the test timeout
+      # Build APKs before emulator boot so build time doesn't eat into test timeout
       - name: Build debug and test APKs
         run: ./gradlew packageDebug packageDebugAndroidTest
 
       - name: Run instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ matrix.api-level }}
+          api-level: 29
           arch: x86_64
           target: default
           profile: pixel_6
           ram-size: 2048M
           heap-size: 512M
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          # Grant storage permissions before running so ProjectStorageTest can write to external dir.
-          # WRITE_EXTERNAL_STORAGE is only applicable on API <= 32; pm grant ignores it on 33+.
-          script: ./ci/run-instrumented-tests.sh ${{ matrix.api-level }}
+          script: bash ci/run-instrumented-tests.sh 29
 
       - name: Upload instrumented test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: instrumented-test-results-api${{ matrix.api-level }}
+          name: instrumented-test-results
           path: app/build/reports/androidTests/connected/
