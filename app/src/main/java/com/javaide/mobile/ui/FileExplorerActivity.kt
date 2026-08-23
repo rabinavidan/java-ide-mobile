@@ -35,7 +35,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /** Browses the contents of a single project directory, one folder level at a time. */
-class FileExplorerActivity : AppCompatActivity() {
+class FileExplorerActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_PROJECT_PATH = "extra_project_path"

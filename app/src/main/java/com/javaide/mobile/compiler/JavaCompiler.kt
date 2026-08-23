@@ -34,8 +34,6 @@ object JavaCompiler {
         val classpath = (listOf(androidJar) + libJars).joinToString(File.pathSeparator) { it.absolutePath }
 
         val args = arrayOf(
-            "-source", "1.8",
-            "-target", "1.8",
             "-encoding", "UTF-8",
             "-proc:none",
             "-nowarn",
@@ -45,9 +43,11 @@ object JavaCompiler {
 
         // systemExitWhenFinished must be false: the default calls System.exit() on
         // failure, which would kill the host app instead of just failing the build.
-        // Wrapped in try/catch(Throwable): ECJ's FileSystem static initializer references
-        // javax.lang.model.SourceVersion which doesn't exist on Android, causing
-        // NoClassDefFoundError at class-load time (an Error, not an Exception).
+        // Wrapped in try/catch(Throwable): ECJ may reference missing Android runtime
+        // classes (SourceVersion, Runtime.Version) — catch the resulting Errors too.
+        // We deliberately omit -source/-target: ECJ 3.46 calls Runtime.Version.parse()
+        // only when requestedSourceVersion is set (i.e. when -source is passed), and
+        // Runtime.Version does not exist on Android, causing NoClassDefFoundError.
         return try {
             val compiler = Main(PrintWriter(outWriter), PrintWriter(errWriter), false, null, null)
             val success = compiler.compile(args)

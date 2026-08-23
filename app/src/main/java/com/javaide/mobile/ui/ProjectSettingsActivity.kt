@@ -28,7 +28,7 @@ import java.io.File
  * (see PackageRenamer). Min/target SDK and the icon only apply to Android-app projects (Java-
  * console projects have no AndroidManifest.xml at all), so that whole section is hidden for those.
  */
-class ProjectSettingsActivity : AppCompatActivity() {
+class ProjectSettingsActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_PROJECT_PATH = "extra_project_path"

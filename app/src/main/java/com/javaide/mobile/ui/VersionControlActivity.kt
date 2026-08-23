@@ -29,7 +29,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /** A single-screen git dashboard for one project: status, commit (optionally signed), push/pull, log. */
-class VersionControlActivity : AppCompatActivity() {
+class VersionControlActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_PROJECT_PATH = "extra_project_path"

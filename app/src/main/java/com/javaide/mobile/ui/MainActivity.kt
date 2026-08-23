@@ -7,10 +7,8 @@ import android.view.MenuItem
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.javaide.mobile.BuildConfig
 import com.javaide.mobile.R
 import com.javaide.mobile.data.AppDatabase
 import com.javaide.mobile.data.Logger
@@ -23,7 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     private companion object {
         const val PREFS_NAME = "onboarding"
@@ -38,7 +36,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
-        supportActionBar?.subtitle = "v${BuildConfig.VERSION_NAME} (${BuildConfig.GIT_HASH})"
 
         adapter = ProjectAdapter(
             onProjectClick = ::openProject,
