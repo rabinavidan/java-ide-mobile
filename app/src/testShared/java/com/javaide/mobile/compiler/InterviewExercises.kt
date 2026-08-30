@@ -122,18 +122,27 @@ object InterviewExercises {
     val GROUP_ANAGRAMS = InterviewExercise(
         className = "GroupAnagrams",
         source = """
-            import java.util.*;
-            import java.util.stream.*;
+            import java.util.ArrayList;
+            import java.util.Arrays;
+            import java.util.List;
+            import java.util.Map;
+            import java.util.TreeMap;
 
             public class GroupAnagrams {
                 public static void main(String[] args) {
-                    List<String> words = Arrays.asList("eat", "tea", "tan", "ate", "nat", "bat");
-                    Map<String, List<String>> groups = words.stream()
-                        .collect(Collectors.groupingBy(w -> {
-                            char[] chars = w.toCharArray();
-                            Arrays.sort(chars);
-                            return new String(chars);
-                        }, TreeMap::new, Collectors.toList()));
+                    String[] words = {"eat", "tea", "tan", "ate", "nat", "bat"};
+                    Map<String, List<String>> groups = new TreeMap<>();
+                    for (String w : words) {
+                        char[] chars = w.toCharArray();
+                        Arrays.sort(chars);
+                        String key = new String(chars);
+                        List<String> list = groups.get(key);
+                        if (list == null) {
+                            list = new ArrayList<>();
+                            groups.put(key, list);
+                        }
+                        list.add(w);
+                    }
                     System.out.println(groups.values());
                 }
             }

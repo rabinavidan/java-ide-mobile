@@ -1,6 +1,7 @@
 package com.javaide.mobile.compiler
 
 import org.eclipse.jdt.internal.compiler.batch.Main
+import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -44,12 +45,20 @@ object JavaCompiler {
         // systemExitWhenFinished must be false: the default calls System.exit() on
         // failure, which would kill the host app instead of just failing the build.
         // Wrapped in try/catch(Throwable): ECJ may reference missing Android runtime
-        // classes (SourceVersion, Runtime.Version) — catch the resulting Errors too.
-        // We deliberately omit -source/-target: ECJ 3.46 calls Runtime.Version.parse()
-        // only when requestedSourceVersion is set (i.e. when -source is passed), and
-        // Runtime.Version does not exist on Android, causing NoClassDefFoundError.
+        // classes — catch Errors too.
+        //
+        // Root cause of Runtime.Version crash on Android:
+        // ECJ's Main.initialize() seeds this.options from new CompilerOptions().getMap(),
+        // which always includes OPTION_Source="1.8". CompilerOptions.readFromMap() then
+        // sets requestedSourceVersion="1.8", and Parser.parse() calls
+        // Runtime.Version.parse(requestedSourceVersion) — a class that doesn't exist on
+        // Android. Passing OPTION_Source="" as a custom default overrides this to a blank
+        // string; the guard `!requestedSourceVersion.isBlank()` is false, so
+        // Version.parse() is never called. versionToJdkLevel("") returns 0 so all
+        // downstream source/target/compliance checks are safely skipped.
+        val customOptions = hashMapOf(CompilerOptions.OPTION_Source to "")
         return try {
-            val compiler = Main(PrintWriter(outWriter), PrintWriter(errWriter), false, null, null)
+            val compiler = Main(PrintWriter(outWriter), PrintWriter(errWriter), false, customOptions, null)
             val success = compiler.compile(args)
             val log = (outWriter.toString() + errWriter.toString())
                 .ifBlank { if (success) "Compilation succeeded." else "Compilation failed." }

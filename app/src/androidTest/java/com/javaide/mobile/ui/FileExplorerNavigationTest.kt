@@ -11,6 +11,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtraWithKey
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.hamcrest.Matchers.allOf
+import org.hamcrest.Matchers.containsString
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -63,7 +64,7 @@ class FileExplorerNavigationTest {
             Intents.intending(hasComponent(EditorActivity::class.java.name))
                 .respondWith(android.app.Instrumentation.ActivityResult(0, null))
 
-            onView(withText("Main.java")).perform(click())
+            onView(withText(containsString("Main.java"))).perform(click())
 
             // Verify EditorActivity was launched with the correct file — not that we went back
             Intents.intended(

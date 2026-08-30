@@ -25,6 +25,7 @@ android {
         versionCode = 11
         versionName = "0.2.8"
         buildConfigField("String", "GIT_HASH", "\"${gitHash.get()}\"")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
