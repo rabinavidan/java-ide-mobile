@@ -1,6 +1,6 @@
 package com.javaide.mobile.compiler
 
-import dalvik.system.DexClassLoader
+import dalvik.system.InMemoryDexClassLoader
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
@@ -9,6 +9,7 @@ import java.io.StringWriter
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
+import java.nio.ByteBuffer
 
 data class RunResult(val success: Boolean, val output: String)
 
@@ -27,14 +28,11 @@ object JavaRunner {
         if (!dexFile.isFile) {
             return RunResult(success = false, output = "No classes.dex found; compile/dex step must have failed.")
         }
-        optimizedDir.mkdirs()
 
-        val classLoader = DexClassLoader(
-            dexFile.absolutePath,
-            optimizedDir.absolutePath,
-            null,
-            JavaRunner::class.java.classLoader
-        )
+        // Android 10+ blocks DexClassLoader from loading writable DEX files (security restriction).
+        // InMemoryDexClassLoader bypasses this by loading DEX directly from a ByteBuffer.
+        val dexBuffer = ByteBuffer.wrap(dexFile.readBytes())
+        val classLoader = InMemoryDexClassLoader(dexBuffer, JavaRunner::class.java.classLoader)
 
         val (mainClass, mainMethod) = findMain(classesDir, classLoader)
             ?: return RunResult(success = false, output = "No class with a public static void main(String[]) method was found.")

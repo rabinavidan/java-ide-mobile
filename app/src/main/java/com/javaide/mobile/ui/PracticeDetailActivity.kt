@@ -26,7 +26,7 @@ import java.io.File
  * for study. This is a worked-examples tool, not a blind quiz -- the solution is visible and
  * editable so it can be tweaked and re-run.
  */
-class PracticeDetailActivity : AppCompatActivity() {
+class PracticeDetailActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_CLASS_NAME = "extra_class_name"

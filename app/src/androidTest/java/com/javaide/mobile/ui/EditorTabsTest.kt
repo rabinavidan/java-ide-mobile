@@ -6,7 +6,10 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
+import com.javaide.mobile.R
+import org.hamcrest.Matchers.allOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Before
@@ -46,7 +49,7 @@ class EditorTabsTest {
         }
 
         ActivityScenario.launch<EditorActivity>(intent).use {
-            onView(withText("Main.java")).check(matches(isDisplayed()))
+            onView(allOf(withId(R.id.textTabName), withText("Main.java"))).check(matches(isDisplayed()))
         }
     }
 
@@ -60,7 +63,7 @@ class EditorTabsTest {
         }
 
         ActivityScenario.launch<EditorActivity>(intent).use { scenario ->
-            onView(withText("Main.java")).check(matches(isDisplayed()))
+            onView(allOf(withId(R.id.textTabName), withText("Main.java"))).check(matches(isDisplayed()))
 
             val intent2 = Intent(ctx, EditorActivity::class.java).apply {
                 putExtra(EditorActivity.EXTRA_FILE_PATH, helperFile.absolutePath)
@@ -71,8 +74,8 @@ class EditorTabsTest {
                 InstrumentationRegistry.getInstrumentation().callActivityOnNewIntent(activity, intent2)
             }
 
-            onView(withText("Main.java")).check(matches(isDisplayed()))
-            onView(withText("Helper.java")).check(matches(isDisplayed()))
+            onView(allOf(withId(R.id.textTabName), withText("Main.java"))).check(matches(isDisplayed()))
+            onView(allOf(withId(R.id.textTabName), withText("Helper.java"))).check(matches(isDisplayed()))
         }
     }
 
@@ -92,7 +95,7 @@ class EditorTabsTest {
             }
 
             // Still shows exactly one "Main.java" tab — not two
-            onView(withText("Main.java")).check(matches(isDisplayed()))
+            onView(allOf(withId(R.id.textTabName), withText("Main.java"))).check(matches(isDisplayed()))
         }
     }
 }

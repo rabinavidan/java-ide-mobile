@@ -16,7 +16,7 @@ import kotlinx.coroutines.withContext
  * rooted devices, emulators, and other dev-friendly builds -- Android restricts logcat to an
  * app's own UID since API 16, so a locked-down device will show [msg_logcat_no_process] instead).
  */
-class LogcatActivity : AppCompatActivity() {
+class LogcatActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_PACKAGE_NAME = "extra_package_name"

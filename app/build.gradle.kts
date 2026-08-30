@@ -22,9 +22,10 @@ android {
         applicationId = "com.javaide.mobile"
         minSdk = 26
         targetSdk = 34
-        versionCode = 10
-        versionName = "0.2.7"
+        versionCode = 11
+        versionName = "0.2.8"
         buildConfigField("String", "GIT_HASH", "\"${gitHash.get()}\"")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {

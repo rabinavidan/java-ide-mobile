@@ -5,7 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.javaide.mobile.databinding.ActivityHelpBinding
 
 /** Static, always-available guide to what the app can do -- not a first-run-only tour. */
-class HelpActivity : AppCompatActivity() {
+class HelpActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

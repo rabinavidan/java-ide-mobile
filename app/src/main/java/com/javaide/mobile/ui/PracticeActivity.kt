@@ -8,7 +8,7 @@ import com.javaide.mobile.compiler.InterviewExercise
 import com.javaide.mobile.databinding.ActivityPracticeBinding
 
 /** Browsable list of the interview-practice exercises, grouped by category. */
-class PracticeActivity : AppCompatActivity() {
+class PracticeActivity : BaseActivity() {
 
     private lateinit var binding: ActivityPracticeBinding
 

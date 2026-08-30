@@ -20,7 +20,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /** Recursive text search across every file in a project, with tap-to-jump into the editor. */
-class ProjectSearchActivity : AppCompatActivity() {
+class ProjectSearchActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_PROJECT_PATH = "extra_project_path"

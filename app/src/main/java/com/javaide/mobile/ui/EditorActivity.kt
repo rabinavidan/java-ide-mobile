@@ -60,7 +60,7 @@ data class EditorTab(val file: File, var text: String, var cursorLine: Int = 0, 
  * the tradeoff is that undo/redo history resets when you leave a tab and come back (auto-save
  * still protects the actual text).
  */
-class EditorActivity : AppCompatActivity() {
+class EditorActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_FILE_PATH = "extra_file_path"

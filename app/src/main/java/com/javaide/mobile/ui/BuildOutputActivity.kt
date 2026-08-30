@@ -10,7 +10,7 @@ import com.javaide.mobile.databinding.ActivityBuildOutputBinding
 import com.javaide.mobile.util.ApkInstaller
 import java.io.File
 
-class BuildOutputActivity : AppCompatActivity() {
+class BuildOutputActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_SUCCESS = "extra_success"
