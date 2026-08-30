@@ -117,14 +117,25 @@ No lint job, no APK-artifact upload, no release pipeline, no catalog-validation 
 App version at baseline: `versionCode 10`, `versionName "0.2.7"`. `compileSdk`/`targetSdk` 34,
 `minSdk` 26, Java 17 source/target compatibility.
 
+This sandboxed environment had no Android SDK preinstalled; one was provisioned locally
+(`cmdline-tools` + `platform-tools` + `platforms;android-34` + `build-tools;34.0.0`) to run these
+commands, matching what `ci.yml` uses in GitHub Actions.
+
 | Command | Result |
 |---|---|
-| `./gradlew testDebugUnitTest` | _see below_ |
-| `./gradlew lint` | _see below_ |
-| `./gradlew assembleDebug` | _see below_ |
+| `./gradlew testDebugUnitTest` | **BUILD SUCCESSFUL** — 160 tests, 0 failures, 0 errors, 0 skipped |
+| `./gradlew lint` | **BUILD SUCCESSFUL** (after a fix — see below) — 0 errors, 93 warnings (mostly `GradleDependency` outdated-library notices; also `Autofill`, `NotifyDataSetChanged`, `ButtonStyle`, `PluralsCandidate`, `ObsoleteSdkInt`, `RtlSymmetry`, etc.). Full report: `app/build/reports/lint-results-debug.html` |
+| `./gradlew assembleDebug` | **BUILD SUCCESSFUL** — `app/build/outputs/apk/debug/app-debug.apk` produced (~50 MB) |
 | `./ci/run-instrumented-tests.sh` | Not run — no Android emulator/device available in this sandboxed environment |
 
-_(Results filled in below once the commands complete.)_
+**Bug found and fixed while running `./gradlew lint`:** it failed outright with a Gradle task-validation
+error before analyzing any code — `generateDebugLintReportModel` and `lintAnalyzeDebug` read
+`build/generated/androidJarAsset` (registered as an assets source dir in `app/build.gradle.kts`)
+without declaring a dependency on the `copyAndroidJar` task that populates it. The existing
+`dependsOn(copyAndroidJar)` wiring only covered `merge*Assets` tasks. Fixed by extending that
+`tasks.matching { ... }` block to also match `generate*LintReportModel` and `lintAnalyze*` (see
+commit `95dcb17`). This means `./gradlew lint` was previously non-functional — worth noting since
+Milestone 19 plans to add a lint job to CI, and it needs this fix to work at all.
 
 ## 8. Documented current limitations
 
