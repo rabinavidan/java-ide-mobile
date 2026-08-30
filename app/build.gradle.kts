@@ -73,7 +73,12 @@ val copyAndroidJar by tasks.registering(Copy::class) {
     rename { "android.jar" }
 }
 
-tasks.matching { it.name.matches(Regex("merge.*Assets")) }.configureEach {
+// Lint's model-generation/analysis tasks also read androidJarAssetDir (it's a registered
+// assets source dir), so they need the same dependency merge*Assets gets above — otherwise
+// Gradle flags an undeclared-dependency validation error and `./gradlew lint` fails outright.
+tasks.matching {
+    it.name.matches(Regex("merge.*Assets")) || it.name.matches(Regex("generate.*LintReportModel")) || it.name.matches(Regex("lintAnalyze.*"))
+}.configureEach {
     dependsOn(copyAndroidJar)
 }
 
