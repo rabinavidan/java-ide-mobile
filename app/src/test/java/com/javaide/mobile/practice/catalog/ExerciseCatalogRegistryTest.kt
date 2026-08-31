@@ -10,17 +10,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Milestone 3 acceptance checks against the real, app-wide catalog: all 30 legacy exercises are
+ * Milestone 3 acceptance checks against the real, app-wide catalog: all legacy exercises are
  * registered, no duplicate ids/classNames, categories contain valid exercises, and the exercise
- * count is derived (never hardcoded) from the catalog itself.
+ * count is derived (never hardcoded) from the catalog itself. Deliberately does not assert the
+ * catalog's total size anywhere in this file -- the catalog is expected to keep growing as new
+ * topic files (Milestone 6+) add content, so a hardcoded total would break on every addition.
  */
 class ExerciseCatalogRegistryTest {
 
     @Test
     fun `every legacy exercise is registered exactly once`() {
         val all = ExerciseCatalogRegistry.getAll()
-        assertEquals(InterviewExercises.ALL.size, all.size)
-        assertEquals(30, all.size)
+        assertTrue(all.size >= InterviewExercises.ALL.size)
 
         val registeredClassNames = all.map { it.className }.toSet()
         InterviewExercises.ALL.forEach { legacy ->
@@ -61,7 +62,7 @@ class ExerciseCatalogRegistryTest {
     @Test
     fun `topics list matches the flattened catalog`() {
         assertEquals(ExerciseCatalogRegistry.getAll().size, ExerciseCatalogRegistry.topics.flatten().size)
-        assertEquals(10, ExerciseCatalogRegistry.topics.size)
+        assertTrue(ExerciseCatalogRegistry.topics.size >= 10)
     }
 
     @Test
