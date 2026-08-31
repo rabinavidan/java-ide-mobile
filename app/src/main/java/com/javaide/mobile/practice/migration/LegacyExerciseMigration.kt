@@ -34,9 +34,17 @@ object LegacyExerciseMigration {
 
     fun migrateAll(): List<InterviewExercise> =
         PracticeCategories.ALL.flatMap { category ->
-            val categoryId = slugify(category.title)
+            val categoryId = categoryIdFor(category.title)
             category.exercises.map { legacy -> migrate(legacy, categoryId, category.title) }
         }
+
+    /**
+     * The category id a legacy category title slugifies to, e.g. "Arrays & Strings" ->
+     * "arrays-strings". Exposed so the per-topic catalog files (Milestone 3,
+     * `com.javaide.mobile.practice.catalog`) can derive the same id used here instead of
+     * hardcoding (and risking a typo'd duplicate of) the slug themselves.
+     */
+    fun categoryIdFor(categoryTitle: String): String = slugify(categoryTitle)
 
     fun migrate(
         legacy: com.javaide.mobile.compiler.InterviewExercise,
