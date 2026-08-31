@@ -212,3 +212,36 @@ Running log of all development activity in this repository.
   complete solution unchanged; that cutover is Milestones 12/13's job
 
 ---
+
+## 2026-08-31 (continued, 2)
+
+### Milestone 6, Section A: Hash Maps and Sets (6 new challenges)
+
+- `practice/catalog/HashMapExercises.kt` — the first newly-*authored* (not migrated) content:
+  First Non-Repeating Character, Intersection of Two Arrays, Isomorphic Strings, Happy Number,
+  Longest Consecutive Sequence, Top K Frequent Elements. Each has a real problem statement, ≥2
+  examples, constraints, genuinely separate starter/solution code, ≥2 hints, complexity notes,
+  pattern tags, and 4 test cases (3 visible + 1 hidden). Every `main()` reads structured input via
+  `Scanner`/stdin and prints one deterministic line — the first content written *for*
+  `TestCaseRunner`'s multi-test-case model rather than migrated from the legacy single-run style.
+  Top K Frequent Elements explicitly commits to a tie-break rule (ascending value) in both the
+  problem statement and the solution, so exact-match comparison stays meaningful despite ties.
+- Caught and fixed a real bug before it shipped: `split("\s+")` in the first draft is an invalid
+  Java escape sequence (needs `split("\\s+")`) — would have failed to compile. Only found because
+  every starter and solution string gets real-compiled through ECJ in `HashMapExercisesTest`, not
+  just visually reviewed.
+- `ExerciseCatalogRegistry` — added `HashMapExercises.ALL` to `catalogTopics`
+- Fixed two hardcoded-total assertions in `ExerciseCatalogRegistryTest` (`assertEquals(30, ...)`
+  and `assertEquals(10, topics.size)`) that would have broken the moment any new topic file was
+  added — the catalog is *supposed* to keep growing, so these now assert "at least" rather than
+  "exactly"
+- New tests: `HashMapExercisesTest` (JVM) — structural validation, both starter and solution code
+  real-compiled via ECJ for all 6; `HashMapExercisesRunTest` (androidTest) — every solution
+  actually passes all of its own test cases (visible and hidden) via the real
+  `ExerciseRunner`/`TestCaseRunner` engine, and every starter code compiles but does *not*
+  coincidentally pass — 6 new JVM tests, full suite now 230, all passing; instrumented run not
+  yet executed locally (no emulator here), first real run is CI's `instrumented-tests` job
+- This is Section A of 4 for Milestone 6 (Two Pointers, Sliding Window, and Intervals sections
+  still to come)
+
+---

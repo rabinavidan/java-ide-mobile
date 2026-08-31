@@ -13,7 +13,8 @@ private val catalogTopics: List<List<InterviewExercise>> = listOf(
     SortingSearchingExercises.ALL,
     RecursionBacktrackingExercises.ALL,
     DynamicProgrammingExercises.ALL,
-    BitManipulationExercises.ALL
+    BitManipulationExercises.ALL,
+    HashMapExercises.ALL
 )
 
 /**
