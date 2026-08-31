@@ -145,3 +145,45 @@ Running log of all development activity in this repository.
   tests, all passing
 
 ---
+
+## 2026-08-31 (continued)
+
+### Activity — Milestone 4 (Challenge Execution and Test Engine)
+- `practice/execution/{TestCaseResult,ExerciseRunResult,RawExecution}.kt` — the structured
+  run-result models from the plan (stdout/stderr captured separately in `RawExecution`, folded
+  into a single `actual` for comparison purposes by the evaluator)
+- `practice/execution/ExerciseResultEvaluator.kt` — pure logic, no Android dependency, so fully
+  unit-testable on the JVM: safe output normalization (line-ending unification, trailing
+  whitespace per line, trailing blank-line collapse — deliberately *not* collapsing internal
+  whitespace or hiding genuinely extra output), per-test-case pass/fail evaluation (a timeout or
+  uncaught exception always fails, regardless of partial stdout), aggregate stats, and an
+  Interview Mode redaction helper that hides only a hidden test's `expected` value (never
+  `actual`/`passed` — those describe the user's own submission)
+- `practice/execution/TestCaseRunner.kt` — runs one compiled program invocation per test case via
+  `DexClassLoader`, feeding `testCase.input` through stdin, with a per-test timeout via a bounded
+  executor. Deliberately duplicates (rather than shares) `JavaRunner`'s small main-method-finding
+  logic, keeping the existing shipped Run flow for normal Java Console projects completely
+  unaffected by this milestone. Documented explicitly: the timeout is best-effort — a genuinely
+  hung thread can't be forcibly killed in-process, so `run()` stops *waiting* at the timeout but
+  can't guarantee the runaway thread actually stops (same non-sandboxed caveat `JavaRunner`
+  already carries, not a new regression)
+- `practice/execution/ExerciseRunner.kt` — orchestrates compile → dex → one `TestCaseRunner` call
+  per test case → `ExerciseResultEvaluator`; one test case failing never stops the rest. The
+  compile/dex-failure early-return paths never touch `DexClassLoader`, so they're unit-testable
+  on the JVM the same way `JavaCompiler`/`Dexer` already are
+- 17 new JVM unit tests (`ExerciseResultEvaluatorTest`: normalization edge cases, correct/incorrect
+  solution, extra console output, empty output, runtime exception, timeout representation,
+  aggregation, hidden-test redaction; `ExerciseRunnerCompileFailureTest`: real ECJ compile failures
+  through the full `ExerciseRunner.run()` path) — full JVM suite now 209 tests, all passing
+- `ExerciseRunnerRunTest.kt` (instrumented, androidTest) — the scenarios that need real
+  `DexClassLoader` execution and can't run on a plain JVM: correct solution (multiple test cases
+  via stdin), incorrect solution failing multiple test cases without stopping early, runtime
+  exception, infinite-loop timeout (asserted to return well under 30s, not hang), extra console
+  output, and empty-output pass/fail. Verified to compile and package
+  (`compileDebugAndroidTestKotlin`/`packageDebugAndroidTest` both succeed) — no emulator available
+  in this sandboxed environment to actually execute it, so CI's instrumented job is this file's
+  first real run
+- Not wired into the live UI yet — same deferral as Milestone 3, waiting on starter/solution
+  separation (Milestone 5) before a Run & Check click has a meaningful "starter code" to run
+
+---
