@@ -13,10 +13,12 @@ import com.javaide.mobile.practice.model.InterviewExercise
  * data ahead of the catalog/runner/UI cutover (Milestones 3-5). Purely additive: nothing here is
  * wired into the app yet, and the legacy model/UI keep working unchanged.
  *
- * The legacy model has no title/description/examples/hints/complexity/difficulty data, so those
- * fields are filled with clearly-labeled placeholders derived from what *is* available (the
- * class name and the single expected-output string) rather than fabricated content. Real content
- * authoring for these 30 — and the other 70 the plan calls for — is later milestones' job
+ * `starterCode` and `hints` come from the hand-authored [LegacyStarterCode] (Milestone 5) — a
+ * real TODO-marked stub distinct from the reference solution, not a copy of it. Everything else
+ * the legacy model has no data for (title/description/examples/complexity/difficulty) still gets
+ * a clearly-labeled placeholder derived from what *is* available (the class name and the single
+ * expected-output string) rather than fabricated content. Real content authoring for those
+ * remaining fields — and the other 70 exercises the plan calls for — is later milestones' job
  * (6-11 for new content, 20 for a full quality review); this adapter's job is just to prove the
  * new model can represent the old data without losing anything, not to write copy.
  *
@@ -52,6 +54,9 @@ object LegacyExerciseMigration {
         categoryTitle: String
     ): InterviewExercise {
         val title = PracticeCategories.displayTitle(legacy)
+        // Every legacy exercise has hand-authored starter content (Milestone 5); the fallback
+        // below only guards a future legacy addition that hasn't been given one yet.
+        val starterContent = LegacyStarterCode.BY_CLASS_NAME[legacy.className]
 
         return InterviewExercise(
             id = "$categoryId-${slugify(legacy.className)}",
@@ -70,11 +75,9 @@ object LegacyExerciseMigration {
                     explanation = "This is the exact console output the original exercise checked for."
                 )
             ),
-            // Starter/solution separation (Milestone 5) hasn't happened for legacy content yet,
-            // so both fields hold the same known-correct source for now.
-            starterCode = legacy.source,
+            starterCode = starterContent?.starterCode ?: legacy.source,
             solutionCode = legacy.source,
-            hints = emptyList(),
+            hints = starterContent?.hints ?: emptyList(),
             testCases = listOf(
                 ExerciseTestCase(
                     id = "legacy-output",

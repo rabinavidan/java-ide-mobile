@@ -48,4 +48,51 @@ class LegacyExerciseMigrationTest {
             assertTrue(migratedExercise.testCases.any { it.visible && it.expectedOutput == legacy.expectedOutput })
         }
     }
+
+    // --- Milestone 5: starter/solution separation ---
+
+    @Test
+    fun `every migrated exercise has starter code distinct from the solution`() {
+        val migrated = LegacyExerciseMigration.migrateAll()
+        migrated.forEach { exercise ->
+            assertTrue(
+                "expected starterCode to differ from solutionCode for ${exercise.className}",
+                exercise.starterCode != exercise.solutionCode
+            )
+        }
+    }
+
+    @Test
+    fun `every migrated exercise's starter code contains a TODO marker`() {
+        val migrated = LegacyExerciseMigration.migrateAll()
+        migrated.forEach { exercise ->
+            assertTrue(
+                "expected a TODO marker in starter code for ${exercise.className}",
+                exercise.starterCode.contains("TODO")
+            )
+        }
+    }
+
+    @Test
+    fun `every migrated exercise has at least two hints`() {
+        val migrated = LegacyExerciseMigration.migrateAll()
+        migrated.forEach { exercise ->
+            assertTrue(
+                "expected at least 2 hints for ${exercise.className}, got ${exercise.hints.size}",
+                exercise.hints.size >= 2
+            )
+            assertTrue(exercise.hints.all { it.isNotBlank() })
+        }
+    }
+
+    @Test
+    fun `every migrated exercise's starter code keeps the same class name as the solution`() {
+        val migrated = LegacyExerciseMigration.migrateAll()
+        migrated.forEach { exercise ->
+            assertTrue(
+                "expected starter code for ${exercise.className} to declare a public class ${exercise.className}",
+                exercise.starterCode.contains("class ${exercise.className}")
+            )
+        }
+    }
 }
