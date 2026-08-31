@@ -112,3 +112,36 @@ Running log of all development activity in this repository.
   confirmed `installDebug`/`allureReport`/`connectedAndroidTest` tasks exist via `./gradlew tasks --all`
 
 ---
+
+## 2026-08-31 (continued) — Milestone 3
+
+### Session Start
+- Branch: `claude/java-ide-interview-baseline-i1g39p` (restarted from `main` after the Milestone 2
+  / `docs/ROADMAP.md` PR merged — see `#41`)
+- Task: Milestone 3 (Modular Exercise Catalog) of the Interview Practice Expansion plan
+
+### Activity
+- `LegacyExerciseMigration.categoryIdFor(title)` — exposed the previously-private slugify logic
+  so the new catalog files below don't hardcode/duplicate category-id slugs
+- `practice/catalog/ExerciseCatalog.kt` — the interface: `getAll`/`findById`/`findByCategory`/
+  `findByDifficulty`/`findByPattern`/`search`
+- `practice/catalog/InMemoryExerciseCatalog.kt` — a reusable `ExerciseCatalog` implementation over
+  any fixed list (used both by the app-wide registry and by tests with hand-built fixtures)
+- `practice/catalog/{Fundamentals,Arrays,LinkedList,StackQueue,Tree,Graph,SortingSearching,
+  RecursionBacktracking,DynamicProgramming,BitManipulation}Exercises.kt` — the 30 exercises split
+  into 10 topic files (one per today's actual category), each declaring its own legacy-exercise
+  membership and migrating them via `LegacyExerciseMigration`. Doesn't create the full 16-file
+  target structure from the plan — several of those names (HashMapExercises, TwoPointersExercises,
+  AutomationExercises, ...) correspond to categories that don't have any content yet (Milestones
+  6-11); creating empty stub files for them now would be scope creep, so those get created when
+  their content does
+- `practice/catalog/ExerciseCatalogRegistry.kt` — the app-wide `ExerciseCatalog` singleton,
+  aggregating all 10 topic files. Not yet wired into the live Practice UI (needs the execution
+  engine and starter/solution separation from Milestones 4-5 first) — `PracticeCategories`/
+  `InterviewExercises` remain the UI's data source, unchanged
+- 13 new unit tests (`ExerciseCatalogRegistryTest` against the real 30-exercise catalog,
+  `InMemoryExerciseCatalogTest` against hand-built fixtures for difficulty/pattern/search
+  filtering that the migrated placeholder content doesn't yet exercise); full suite now 192
+  tests, all passing
+
+---
