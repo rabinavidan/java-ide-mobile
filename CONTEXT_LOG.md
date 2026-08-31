@@ -44,3 +44,33 @@ Running log of all development activity in this repository.
   no emulator/device available here
 
 ---
+
+## 2026-08-31
+
+### Session Start
+- Branch: `claude/java-ide-interview-baseline-i1g39p` (restarted from `main` after the Milestone 0
+  PR merged — see `#39`)
+- Task: Milestone 1 (Repository Documentation) of the Interview Practice Expansion plan
+
+### Activity
+- `README.md` — Created: project overview, product purpose, main features, supported project
+  types, Java compilation flow, practice system, existing exercise categories, local build
+  instructions, emulator requirements, test commands, CI workflow, project architecture summary,
+  roadmap, contribution pointer, known limitations
+- `CONTRIBUTING.md` — Created: dev setup, pre-PR checks, where to look before touching the
+  compiler/practice code, commit/PR conventions, issue-reporting guidance
+- `docs/ARCHITECTURE.md` — Created: UI flow diagram, compile→run and compile→build→install
+  pipeline diagrams, current vs. target practice-flow diagrams (target per the expansion plan's
+  challenge→catalog→editor→compiler→runner→evaluator→progress shape), package table, data layer,
+  key conventions
+- `docs/PRACTICE_ENGINE.md` — Created: documents the current `InterviewExercise`
+  model/`PracticeCategories`/`PracticeDetailActivity.execute()` Run & Check flow in detail
+  (discovered the practice system already has a real UI, not just test fixtures — Milestone 0's
+  baseline undersold this), its current constraints, and the staged plan to replace it
+- `docs/ADDING_EXERCISES.md` — Created: step-by-step contributor guide with a checklist
+- `docs/TESTING.md` — Created: test suite breakdown, Allure reporting, static analysis, CI jobs
+- Verified every command referenced in the new docs actually runs: `testDebugUnitTest` (full and
+  single-test `--tests` filter), `lint`, `assembleDebug`, `packageDebug packageDebugAndroidTest`;
+  confirmed `installDebug`/`allureReport`/`connectedAndroidTest` tasks exist via `./gradlew tasks --all`
+
+---
