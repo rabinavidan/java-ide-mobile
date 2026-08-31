@@ -48,6 +48,44 @@ Running log of all development activity in this repository.
 ## 2026-08-31
 
 ### Session Start
+- Branch: `claude/java-ide-interview-baseline-i1g39p`
+- Task: Milestone 1 (Repository Documentation), then a direct coverage audit, then materializing
+  the full milestone plan into the repo with a new Milestone 23
+
+### Activity
+- `README.md`, `CONTRIBUTING.md`, `docs/ARCHITECTURE.md`, `docs/PRACTICE_ENGINE.md`,
+  `docs/ADDING_EXERCISES.md`, `docs/TESTING.md` — created (Milestone 1). Every command referenced
+  was actually run and verified, not assumed. Also surfaced that the practice catalog already has
+  a real in-app UI (`PracticeActivity` → `PracticeDetailActivity`), which Milestone 0's baseline
+  had only described as test fixtures — corrected in `docs/PRACTICE_ENGINE.md`. Merged via
+  [PR #40](https://github.com/rabinavidan/java-ide-mobile/pull/40)
+- Ran a static class-by-class test-coverage audit on request (no JaCoCo configured, so this was a
+  manual comparison of `app/src/main/java` against `app/src/test`/`app/src/androidTest`): ~24/55
+  main classes (~44%) have any dedicated test. Biggest gaps: the entire `data` (Room) package,
+  `Packager`/`ResourceCompiler`/`ApkInstaller`/`DebugSigningKey`, `GitCommitSigner`/`PgpKeyManager`,
+  `JavaRunner` (unit-level), and most of the UI layer including the Practice screens
+- `docs/ROADMAP.md` — created: the full 22-milestone Interview Practice Expansion plan (previously
+  only living in task/conversation context, not the repo), plus a new **Milestone 23 — Test
+  Coverage Hardening (JaCoCo + closing the gaps)** appended at the end, addressing the audit
+  findings above
+- `README.md` — Roadmap section now points at `docs/ROADMAP.md` as the canonical plan
+- Milestone 2 (Practice domain model V2): added `com.javaide.mobile.practice.model`
+  (`Difficulty`, `PracticeMode`, `ExerciseExample`, `ExerciseTestCase`, the V2
+  `InterviewExercise`), `com.javaide.mobile.practice.validation.ExerciseValidator` (structural
+  checks: unique id/className across a catalog, valid Java class name, non-empty test
+  cases/examples, non-blank description/starter/solution code, positive estimatedMinutes — the
+  two compile-time rules from the plan are left to the existing compiler-integration test suite,
+  not duplicated here), and `com.javaide.mobile.practice.migration.LegacyExerciseMigration`
+  (converts all 30 existing exercises into the V2 model with clearly-labeled placeholder metadata
+  for fields the legacy model has no data for). Purely additive — the existing
+  `com.javaide.mobile.compiler.InterviewExercise`/`InterviewExercises`/`PracticeCategories` and
+  the live Practice UI are untouched. 19 new unit tests; full suite now 179 tests, all passing
+
+---
+
+## 2026-08-31
+
+### Session Start
 - Branch: `claude/java-ide-interview-baseline-i1g39p` (restarted from `main` after the Milestone 0
   PR merged — see `#39`)
 - Task: Milestone 1 (Repository Documentation) of the Interview Practice Expansion plan
