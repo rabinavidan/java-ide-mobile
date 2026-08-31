@@ -69,6 +69,17 @@ Running log of all development activity in this repository.
   Coverage Hardening (JaCoCo + closing the gaps)** appended at the end, addressing the audit
   findings above
 - `README.md` — Roadmap section now points at `docs/ROADMAP.md` as the canonical plan
+- Milestone 2 (Practice domain model V2): added `com.javaide.mobile.practice.model`
+  (`Difficulty`, `PracticeMode`, `ExerciseExample`, `ExerciseTestCase`, the V2
+  `InterviewExercise`), `com.javaide.mobile.practice.validation.ExerciseValidator` (structural
+  checks: unique id/className across a catalog, valid Java class name, non-empty test
+  cases/examples, non-blank description/starter/solution code, positive estimatedMinutes — the
+  two compile-time rules from the plan are left to the existing compiler-integration test suite,
+  not duplicated here), and `com.javaide.mobile.practice.migration.LegacyExerciseMigration`
+  (converts all 30 existing exercises into the V2 model with clearly-labeled placeholder metadata
+  for fields the legacy model has no data for). Purely additive — the existing
+  `com.javaide.mobile.compiler.InterviewExercise`/`InterviewExercises`/`PracticeCategories` and
+  the live Practice UI are untouched. 19 new unit tests; full suite now 179 tests, all passing
 
 ---
 
