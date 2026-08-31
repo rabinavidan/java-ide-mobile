@@ -187,3 +187,28 @@ Running log of all development activity in this repository.
   separation (Milestone 5) before a Run & Check click has a meaningful "starter code" to run
 
 ---
+
+## 2026-08-31 (continued)
+
+### Milestone 5: starter code and solution separation
+
+- `practice/migration/LegacyStarterCode.kt` — hand-authored TODO-marked starter-code stubs and
+  two hints each for all 30 legacy exercises. Each stub keeps the required class(es), the method
+  signature(s) to implement, and the unmodified `main()` that exercises them; only the algorithm
+  body is replaced with `// TODO` plus a compiles-cleanly default return, so a fresh starter
+  always compiles but never produces the right answer by accident
+- `LegacyExerciseMigration.migrate()` now sources `starterCode`/`hints` from `LegacyStarterCode`
+  instead of the old `starterCode = solutionCode` / `hints = emptyList()` placeholders
+- `practice/model/ChallengeAttempt.kt` — in-memory (not persisted; that's Milestone 15's job)
+  attempt state: `solutionRevealed`/`hintsRevealed`, `isIndependentSolve()` (a pass only counts
+  as independent if the solution was never revealed — revealing hints doesn't disqualify it), and
+  `wouldDiscardEdits()` as the guard a future UI would call before confirming a code reset
+- New tests: `LegacyStarterCodeCompileTest` real-compiles all 30 starter stubs through ECJ (proof,
+  not assumption, that hand-typed Java actually compiles); `LegacyExerciseMigrationTest` gained
+  assertions that starter code differs from the solution, contains a TODO marker, and every
+  exercise has ≥2 hints; `ChallengeAttemptTest` for the new pure logic — 15 new tests, full JVM
+  suite now 224, all passing
+- Not wired into the live UI yet — `PracticeDetailActivity` still opens the legacy model's
+  complete solution unchanged; that cutover is Milestones 12/13's job
+
+---
