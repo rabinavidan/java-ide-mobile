@@ -195,8 +195,10 @@ Java IDE Mobile is being expanded from a 30-exercise practice catalog into a str
 interview-training platform: 100 curated challenges (60 algorithms/data-structures, 20 Java-specific,
 20 SDET/automation), with **Learn**, **Practice**, and timed **Interview** modes, hidden test
 cases, hints, difficulty levels, and persistent progress tracking. See
-[`docs/BASELINE.md`](docs/BASELINE.md) for the pre-expansion baseline this work builds from, and
-[`CONTRIBUTING.md`](CONTRIBUTING.md) for how to get involved.
+[`docs/ROADMAP.md`](docs/ROADMAP.md) for the full, milestone-by-milestone plan (including
+acceptance criteria and effort estimates), [`docs/BASELINE.md`](docs/BASELINE.md) for the
+pre-expansion baseline this work builds from, and [`CONTRIBUTING.md`](CONTRIBUTING.md) for how to
+get involved.
 
 ## Contribution instructions
 
